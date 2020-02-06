@@ -1,22 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-
+#include "library.h"
 double distance(int x1, int y1, int x2, int y2){
   return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
 }
 
 int main(){
   srand(123);
-  const char *filename = "picmaker.ppm";
+  char *filename = "picmaker.ppm";
   int x, y;
-  const int x_max = 1000;  /* width */
-  const int y_max = 1000;  /* height */
+  int x_max = 1000;  /* width */
+  int y_max = 1000;  /* height */
   unsigned char data[y_max][x_max * 3];
-  FILE * fp;
-  const char *comment = "# pretty circles!";
- 
   for (y = 0; y < y_max; y++) {
     for (x = 0; x < x_max * 3; x += 3) {
       data[y][x] = (x + y) & 255;
@@ -31,7 +24,6 @@ int main(){
     int b = rand() % 255;
     int c_x = rand() % x_max;
     int c_y = rand() % y_max;
-    
     for (y = 0; y < y_max; y++) {
       for (x = 0; x < x_max; x++) {
 	if(distance(x, y, c_x, c_y) < radius){
@@ -42,15 +34,6 @@ int main(){
       }
     }
   }
-
-  fp = fopen(filename, "w");
-  fprintf(fp, "P3\n %s\n %d\n %d\n %d\n", comment, x_max, y_max,
-          255);
-  for(int y = 0; y < y_max; y++){
-    for(int x = 0; x < x_max * 3; x++){
-      fprintf(fp, "%d ", data[y][x]);
-    }
-  }
-  fclose(fp);
+  write_image(x_max, y_max, data, filename);
   return 0;
 }
