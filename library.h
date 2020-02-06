@@ -2,5 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-//void write_image(unsigned char ** matrix, int width, int height, char * filename);
-void write_image(int width, int height, unsigned char matrix[height][width], char * filename);
+int** generate_matrix(int width, int height);
+void plot(int** matrix, int x, int y, int r, int g, int b);
+int write_image(int** matrix, int width, int height, char * filename);
