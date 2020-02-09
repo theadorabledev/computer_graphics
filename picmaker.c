@@ -13,9 +13,9 @@ int main(){
   for (y = 0; y < y_max; y++) {
     for (x = 0; x < x_max * 3; x += 3) {
       plot(m, x / 3, y,
-	   (x + y) & 255,
-	   (x + 1 + y) & 255,
-	   (x + 2 + y) & 255);
+	   rgb((x + y) & 255,
+	       (x + 1 + y) & 255,
+	       (x + 2 + y) & 255));
     }
   }
   for(int i = 0; i < 100; i++){
@@ -29,9 +29,9 @@ int main(){
       for (x = 0; x < x_max; x++) {
 	if(distance(x, y, c_x, c_y) < radius){
 	  plot(m, x, y,
-	       r + 5 * distance(x, y, c_x, c_y),
-	       g + 5 * distance(x, y, c_x, c_y),
-	       b + 5 * distance(x, y, c_x, c_y));
+	       rgb(r + 5 * distance(x, y, c_x, c_y),
+		   g + 5 * distance(x, y, c_x, c_y),
+		   b + 5 * distance(x, y, c_x, c_y)));
 	}
       }
     }
