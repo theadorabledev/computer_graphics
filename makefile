@@ -1,6 +1,8 @@
-all: picmaker
+all: picmaker line
 picmaker: picmaker.c library
 	gcc -o picmaker picmaker.c library -lm
+line: line.c library
+	gcc -o line line.c library -lm
 run:
 	./picmaker
 display:
