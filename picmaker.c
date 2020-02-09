@@ -5,6 +5,7 @@ double distance(int x1, int y1, int x2, int y2){
 
 int main(){
   srand(123);
+  printf("Generating picmaker image.\n");
   char *filename = "picmaker.ppm";
   int x, y;
   int x_max = 1000;  /* width */
@@ -38,5 +39,6 @@ int main(){
   }
   
   write_image(m, filename);
+  printf("Wrote picmaker image to image.ppm.\n");
   return 0;
 }

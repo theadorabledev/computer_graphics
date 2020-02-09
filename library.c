@@ -83,9 +83,12 @@ void draw_line_gentle(MATRIX * matrix, int x1, int y1, int x2, int y2, int rgb){
 }
 void draw_line(MATRIX * matrix, int x1, int y1, int x2, int y2, int rgb){
   double slope = (y2 - y1) * 1.0 / (x2 - x1);
-  if(abs(slope) <= 1){
+  if(fabs(slope) <= 1.0){
     draw_line_gentle(matrix, x1, y1, x2, y2, rgb);
   }else{
     draw_line_steep(matrix, x1, y1, x2, y2, rgb);
   }
+}
+void draw_line_polar(MATRIX * matrix, int x1, int y1, double r, double theta, int rgb){
+  draw_line(matrix, x1, y1, x1 + (int) (r * cos(theta)), y1 + (int) (r * sin(theta)), rgb);
 }
