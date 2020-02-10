@@ -67,7 +67,7 @@ void draw_line_gentle(MATRIX * matrix, int x1, int y1, int x2, int y2, int rgb){
   }
   int delta_y = y2 - y1;
   int delta_x = x2 - x1;
-  int y_inc = delta_y/abs(delta_y);
+  int y_inc = delta_y ? delta_y/abs(delta_y) : 1;
   if(y_inc < 0)
     delta_y = -delta_y;
   int d = 2 * delta_y - delta_x;
@@ -82,7 +82,7 @@ void draw_line_gentle(MATRIX * matrix, int x1, int y1, int x2, int y2, int rgb){
   }
 }
 void draw_line(MATRIX * matrix, int x1, int y1, int x2, int y2, int rgb){
-  double slope = (y2 - y1) * 1.0 / (x2 - x1);
+  double slope = (x2 - x1) ? (y2 - y1) * 1.0 / (x2 - x1) : 0;
   if(fabs(slope) <= 1.0){
     draw_line_gentle(matrix, x1, y1, x2, y2, rgb);
   }else{

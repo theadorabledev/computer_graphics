@@ -43,7 +43,7 @@ void line_test(){
   printf("Test saved to line_test.ppm\n");
 }
 int main(){
-    line_test();
+  line_test();
   printf("Generating line image.\n");
   srand(125);
   int x, y;
