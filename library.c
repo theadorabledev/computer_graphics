@@ -19,6 +19,13 @@ void plot(MATRIX * matrix, int x, int y, int rgb){
 int rgb(int r, int g, int b){
   return((r&0x0ff)<<16)|((g&0x0ff)<<8)|(b&0x0ff);
 }
+double distance(int x1, int y1, int x2, int y2){
+  return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+}
+void get_point_polar(int x, int y, double theta, double r, int *xn, int *yn){
+  *xn = x + (r * cos(theta));
+  *yn = y + (r * sin(theta));
+}
 int write_image(MATRIX * matrix, char * filename){
   FILE * fp;
   fp = fopen(filename, "w");

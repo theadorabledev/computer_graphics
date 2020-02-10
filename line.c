@@ -1,7 +1,6 @@
 #include "library.h"
-double distance(int x1, int y1, int x2, int y2){
-  return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
-}
+
+
 void line_test(){
   printf("Testing draw_line function.\n");
 
@@ -96,7 +95,11 @@ int main(){
       }
     } 
   }
-  
+  for(double theta = 0; theta < M_PI * 2; theta += (2 * M_PI / pow(2, 7))){
+    int x, y;
+    get_point_polar(cx, cy, theta, 120, &x, &y);
+    draw_line_polar(m, x, y, 1000, theta, rgb(255, 255, 255));
+  }
   write_image(m, "line.ppm");
   printf("Wrote line image to line.ppm\n");
   return 0;
