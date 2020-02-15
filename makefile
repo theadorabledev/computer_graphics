@@ -1,8 +1,10 @@
-all: picmaker line
+all: picmaker line matrix
 picmaker: picmaker.c library
 	gcc -o picmaker picmaker.c library -lm
 line: line.c library
 	gcc -o line line.c library -lm
+matrix: matrix.c library
+	gcc -o matrix matrix.c library -lm
 run:
 	./picmaker
 	./line

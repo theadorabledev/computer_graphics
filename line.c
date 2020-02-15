@@ -8,7 +8,7 @@ void line_test(){
   int x, y;
   int x_max = 50;  /* width */
   int y_max = 50;  /* height */
-  MATRIX * m = generate_matrix(x_max, y_max);
+  GRID * m = generate_grid(x_max, y_max);
   for (y = 0; y < y_max; y++) {
     for (x = 0; x < x_max; x++) {
       plot(m, x, y, 0);
@@ -54,7 +54,7 @@ int main(){
   int xbl = - x_max * .1;
   int ybu = y_max * 1.1;
   int ybl = - y_max * .1;
-  MATRIX * m = generate_matrix(x_max, y_max);
+  GRID * m = generate_grid(x_max, y_max);
   for (y = 0; y < y_max; y++) {
     for (x = 0; x < x_max; x++) {
       double d = distance(cx, cy, x, y);

@@ -7,7 +7,7 @@ int main(){
   int x, y;
   int x_max = 1000;  /* width */
   int y_max = 1000;  /* height */
-  MATRIX * m = generate_matrix(x_max, y_max);
+  GRID * m = generate_grid(x_max, y_max);
   for (y = 0; y < y_max; y++) {
     for (x = 0; x < x_max * 3; x += 3) {
       plot(m, x / 3, y,
