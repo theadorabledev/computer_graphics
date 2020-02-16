@@ -18,6 +18,7 @@ typedef struct Element ELEMENT;
 typedef struct Element{
   MATRIX * matrix;
   int color;
+  int length;
   ELEMENT * next_element;
   ELEMENT * children;
 } ELEMENT;
@@ -34,6 +35,12 @@ double distance(int x1, int y1, int x2, int y2);
 
 #define M_PI 3.14159265358979323846
 
+ELEMENT * generate_element(int size, int color);
+void add_line(ELEMENT * e, int x, int y, int z, int x2, int y2, int z2);
+void add_element(ELEMENT * list, ELEMENT * e);
+void add_child(ELEMENT * parent, ELEMENT * child);
+void plot_element(ELEMENT * e, GRID * g);
+
 
 MATRIX * generate_matrix(int rows, int cols);
 void free_matrix(MATRIX * m);
@@ -42,3 +49,13 @@ void ident(MATRIX * m);
 void grow_matrix(MATRIX *m, int newcols);
 void copy_matrix(MATRIX * a, MATRIX * b);
 void multiply(MATRIX * a, MATRIX * b);
+
+
+void scale(MATRIX * m, double x, double y, double z);
+void translate(MATRIX *m, double x, double y, double z);
+void rotate_z_axis(MATRIX *m, double theta);
+void rotate_y_axis(MATRIX *m, double theta);
+void rotate_x_axis(MATRIX *m, double theta);
+void rotate(MATRIX *m, double x_theta, double y_theta, double z_theta);
+
+

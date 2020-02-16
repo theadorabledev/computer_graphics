@@ -6,8 +6,9 @@ line: line.c library
 matrix: matrix.c library
 	gcc -o matrix matrix.c library -lm
 run:
-	./picmaker
-	./line
+	#./picmaker
+	#./line
+	./matrix
 	make convert
 	make clean
 display:

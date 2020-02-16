@@ -101,16 +101,62 @@ void draw_line_polar(GRID * grid, int x1, int y1, double r, double theta, int rg
 }
 
 
+ELEMENT * generate_element(int size, int color){
+  ELEMENT *e = (ELEMENT *)malloc(sizeof(ELEMENT));
+  e->matrix = generate_matrix(4, size * 2);
+  e->color = color;
+  e->length = 0;
+  e->next_element = NULL;
+  e->children = NULL;
+  return e;
+}
+void add_line(ELEMENT * e, int x, int y, int z, int x2, int y2, int z2){
+  double ** m = e->matrix->data;
+  m[0][e->length] = x;
+  m[1][e->length] = y;
+  m[2][e->length] = z;
+  m[3][e->length] = 1;
+  m[0][e->length + 1] = x2;
+  m[1][e->length + 1] = y2;
+  m[2][e->length + 1] = z2;
+  m[3][e->length + 1] = 1;
+  e->length += 2;
+  if(e->length == e->matrix->columns)
+    grow_matrix(e->matrix, (e->matrix->columns * 3)/2);
+}
+void add_element(ELEMENT * list, ELEMENT * e){
+  while(list->next_element)
+    list = list->next_element;
+  list->next_element = e;
+}
+void add_child(ELEMENT * parent, ELEMENT * child){
+  if(parent->children)
+    add_element(parent->children, child);
+  else
+    parent->children = child;
+}
+  
+void plot_element(ELEMENT * e, GRID * g){
+  if(!e)
+    return;
+  MATRIX *m = e->matrix;
+  for(int c = 0; c < m->columns; c += 2){
+    draw_line(g, (int)m->data[0][c], (int)m->data[1][c], (int)m->data[0][c + 1], (int)m->data[1][c + 1], e->color);
+  }
+  plot_element(e->next_element, g);
+  plot_element(e->children, g);
+
+}
 
 MATRIX * generate_matrix(int rows, int cols){
   double **tmp;
   int i;
   MATRIX *m;
-  tmp = (double **)malloc(rows * sizeof(double *));
+  tmp = (double **)calloc(rows * sizeof(double *), 1);
   for (i=0;i<rows;i++) {
-      tmp[i]=(double *)malloc(cols * sizeof(double));
+    tmp[i]=(double *)calloc(cols * sizeof(double), 1);
     }
-  m=(MATRIX *)malloc(sizeof(MATRIX));
+  m=(MATRIX *)calloc(sizeof(MATRIX), 1);
   m->data=tmp;
   m->rows = rows;
   m->columns = cols;
@@ -118,7 +164,6 @@ MATRIX * generate_matrix(int rows, int cols){
 
   return m;
 }
-
 void free_matrix(MATRIX * m){
   for (int i = 0; i < m->rows; i++) {
     free(m->data[i]);
@@ -135,8 +180,7 @@ void print_matrix(MATRIX * m){
   }
   printf("\n");
 }
-
-void grow_matrix(MATRIX *m, int newcols) {
+void grow_matrix(MATRIX *m, int newcols){
   for (int i = 0; i < m->rows; i++) {
       m->data[i] = realloc(m->data[i],newcols*sizeof(double));
   }
@@ -150,15 +194,15 @@ void copy_matrix(MATRIX * a, MATRIX * b){
 void multiply(MATRIX * a, MATRIX * b){
   MATRIX * t = generate_matrix(b->rows, b->columns);
   for (int r=0; r < a->rows; r++){
-    for (int c=0; c < a->columns; c++){
-      for(int i = 0; i < a->rows; i++)
+    for (int c=0; c < b->columns; c++){
+      for(int i = 0; i < a->rows; i++) {
 	t->data[r][c] += a->data[r][i] * b->data[i][c];
+      }
     }
   }
   copy_matrix(t, b);
   free_matrix(t);
 }
-
 void ident(MATRIX * m){
   for(int r = 0; r < m->columns; r++){
     for(int c = 0; c < m->columns; c++){
@@ -166,7 +210,6 @@ void ident(MATRIX * m){
     }
   }
 }
-
 void scale(MATRIX * m, double x, double y, double z){
   MATRIX *t = generate_matrix(4, 4);
   ident(t);
@@ -176,7 +219,6 @@ void scale(MATRIX * m, double x, double y, double z){
   multiply(t, m);
   free(t);
 }
-
 void translate(MATRIX *m, double x, double y, double z){
   MATRIX *t = generate_matrix(4, 4);
   ident(t);
@@ -206,27 +248,18 @@ void rotate_y_axis(MATRIX *m, double theta){
   multiply(t, m);
   free(t);
 }
-/*
-- Rotate theta degrees about Z axis
-  ```
-   [cos(theta) -sin(theta)  0 0 ]
-   [sin(theta)  cos(theta)  0 0 ]
-   [0           0           1 0 ]
-   [0           0           0 1 ]
-   ```
-- Rotate theta degrees about Y axis
-  ```
-   [cos(theta)   0  sin(theta)  0 ]
-   [0            1  0           0 ]
-   [-sin(theta)  0  cos(theta)  0 ]
-   [0            0  0           1 ]
-   ```
-- Rotate theta degrees about X axis
-  ```
-   [1  0           0           0 ]
-   [0  cos(theta) -sin(theta)  0 ]
-   [0  sin(theta)  cos(theta)  0 ]
-   [0  0           0           1 ]
-
-   ```
-*/
+void rotate_x_axis(MATRIX *m, double theta){
+  MATRIX *t = generate_matrix(4, 4);
+  ident(t);
+  t->data[1][1] = cos(theta);
+  t->data[1][2] = -sin(theta);
+  t->data[2][1] = sin(theta);
+  t->data[2][2] = cos(theta);
+  multiply(t, m);
+  free(t);
+}
+void rotate(MATRIX *m, double x_theta, double y_theta, double z_theta){
+  rotate_x_axis(m, x_theta);
+  rotate_y_axis(m, y_theta);
+  rotate_z_axis(m, z_theta);
+}
