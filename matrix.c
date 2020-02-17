@@ -33,8 +33,8 @@ void test_matrices(){
   multiply(a, b);
   print_matrix(b);
   printf("Converting A to scaling matrix\n");
-  for(int r = 0; r < a->rows; r++)
-    for(int c = 0; c < a->columns; c++)
+  for(int r = 0; r < a->rows - 1 ; r++)
+    for(int c = 0; c < a->columns - 1; c++)
       if(r == c)
 	a->data[r][c] = 2;
   print_matrix(a);
