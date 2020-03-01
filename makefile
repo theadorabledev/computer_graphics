@@ -1,16 +1,20 @@
-all: picmaker line matrix
+all: picmaker line matrix parser run
+
 picmaker: picmaker.c library
 	gcc -o picmaker picmaker.c library -lm
 line: line.c library
 	gcc -o line line.c library -lm
 matrix: matrix.c library
 	gcc -o matrix matrix.c library -lm
-run:
-	./picmaker
-	./line
-	./matrix
-	make convert
-	make clean
+parser: parser.c library
+	gcc -o parser parser.c library -lm
+run: picmaker line matrix parser
+	#./picmaker
+	#./line
+	#./matrix
+	./parser
+	#make convert
+	#make clean
 display:
 	display *.png
 convert:

@@ -38,6 +38,13 @@ int write_image(GRID * grid, char * filename){
   }
   fclose(fp);
 }
+void clear_grid(GRID * grid){
+  for(int y = 0; y < grid->height; y++)
+    for(int x = 0; x < grid->width; x++)
+      grid->data[y][x] = rgb(255, 255, 255);
+}
+    
+
 void draw_line_steep(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
   if(y2 < y1){
     int temp = x2;
@@ -99,7 +106,6 @@ void draw_line(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
 void draw_line_polar(GRID * grid, int x1, int y1, double r, double theta, int rgb){
   draw_line(grid, x1, y1, x1 + (int) (r * cos(theta)), y1 + (int) (r * sin(theta)), rgb);
 }
-
 
 ELEMENT * generate_element(int size, int color){
   ELEMENT *e = (ELEMENT *)malloc(sizeof(ELEMENT));
@@ -210,6 +216,7 @@ void ident(MATRIX * m){
     }
   }
 }
+
 void scale(MATRIX * m, double x, double y, double z){
   MATRIX *t = generate_matrix(4, 4);
   ident(t);

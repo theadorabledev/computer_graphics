@@ -25,6 +25,7 @@ typedef struct Element{
 
 GRID * generate_grid(int width, int height);
 void plot(GRID * grid, int x, int y, int rgb);
+void clear_grid(GRID * grid);
 int write_image(GRID * grid, char * filename);
 void draw_line(GRID * grid, int x1, int y1, int x2, int y2, int rgb);
 void draw_line_polar(GRID * grid, int x1, int y1, double r, double theta, int rgb);
