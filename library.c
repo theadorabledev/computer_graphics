@@ -96,8 +96,8 @@ void draw_line_gentle(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
   }
 }
 void draw_line(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
-  double slope = (x2 - x1) ? (y2 - y1) * 1.0 / (x2 - x1) : 0;
-  if(fabs(slope) <= 1.0){
+  double slope = (x2 - x1) ? (y2 - y1) * 1.0 / (x2 - x1) : INT_MAX;
+  if(fabs(slope) <= 1.0 && slope != INT_MAX){
     draw_line_gentle(grid, x1, y1, x2, y2, rgb);
   }else{
     draw_line_steep(grid, x1, y1, x2, y2, rgb);
