@@ -75,11 +75,12 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
   }
 }
 
-int main(){
+int main(int argc, char *argv[]){
   MATRIX * t = generate_matrix(4, 4);
   ident(t);
   ELEMENT * e = generate_element(40, 0);
   GRID * g = generate_grid(400, 400);
-  parse_file("script", t, e, g);
+  printf("%s\n", argv[0]);
+  parse_file(argv[1], t, e, g);
   return 0;
 }
