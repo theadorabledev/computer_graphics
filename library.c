@@ -242,8 +242,9 @@ void project(MATRIX * m, double d){
   ident(t);
   t->data[0][0] = 1;
   t->data[1][1] = 1;
-  t->data[2][2] = - 1 / d;
-  t->data[3][3] = 0;
+  t->data[2][2] = 0;  
+  t->data[3][2] = - 1 / d;
+  print_matrix(t);
   multiply(t, m);
   free(t);
 }
