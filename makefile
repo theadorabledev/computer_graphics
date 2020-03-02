@@ -15,9 +15,6 @@ run: picmaker line matrix parser
 	echo "Testing parser functionality!"
 	./parser test_script "parser_test.ppm"
 	echo "Seems to work! Saved to parser_test.ppm"
-	echo "Making a cool image with this new parser"
-	./parser parser_script "parser.ppm"
-	echo "Image saved to parser.ppm!"
 	make convert
 	make clean
 display:

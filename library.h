@@ -53,6 +53,7 @@ void multiply(MATRIX * a, MATRIX * b);
 
 
 void scale(MATRIX * m, double x, double y, double z);
+void project(MATRIX * m, double d);
 void translate(MATRIX *m, double x, double y, double z);
 void rotate_z_axis(MATRIX *m, double theta);
 void rotate_y_axis(MATRIX *m, double theta);

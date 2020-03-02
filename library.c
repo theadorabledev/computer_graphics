@@ -43,8 +43,6 @@ void clear_grid(GRID * grid){
     for(int x = 0; x < grid->width; x++)
       grid->data[y][x] = rgb(255, 255, 255);
 }
-    
-
 void draw_line_steep(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
   if(y2 < y1){
     int temp = x2;
@@ -69,6 +67,17 @@ void draw_line_steep(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
     y1 += 1;
     d += (2 * delta_x);
   }
+}
+void draw_line_vertical(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
+  if(y2 < y1){
+    int temp = y2;
+    y2 = y1;
+    y1 = temp;
+  }
+  while(y1 <= y2){
+    plot(grid, x1, y1, rgb);
+    y1 += 1;
+  }  
 }
 void draw_line_gentle(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
   if(x2 < x1){
@@ -96,9 +105,11 @@ void draw_line_gentle(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
   }
 }
 void draw_line(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
-  double slope = (x2 - x1) ? (y2 - y1) * 1.0 / (x2 - x1) : INT_MAX;
-  if(fabs(slope) <= 1.0 && slope != INT_MAX){
+  double slope = (x2 - x1) ? ((y2 - y1) * 1.0 / (x2 - x1)) : INT_MAX;
+  if(fabs(slope) <= 1.0){
     draw_line_gentle(grid, x1, y1, x2, y2, rgb);
+  }else if(slope == INT_MAX){
+    draw_line_vertical(grid, x1, y1, x2, y2, rgb);
   }else{
     draw_line_steep(grid, x1, y1, x2, y2, rgb);
   }
@@ -223,6 +234,16 @@ void scale(MATRIX * m, double x, double y, double z){
   t->data[0][0] = x;
   t->data[1][1] = y;
   t->data[2][2] = z;
+  multiply(t, m);
+  free(t);
+}
+void project(MATRIX * m, double d){
+  MATRIX *t = generate_matrix(4, 4);
+  ident(t);
+  t->data[0][0] = 1;
+  t->data[1][1] = 1;
+  t->data[2][2] = - 1 / d;
+  t->data[3][3] = 0;
   multiply(t, m);
   free(t);
 }
