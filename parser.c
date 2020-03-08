@@ -1,8 +1,8 @@
 #include "library.h"
 
 void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
-  enum command{Line, Ident, Scale, Move, Rotate, Apply, Display, Save};
-  char * commands[] = {"line", "ident", "scale", "move", "rotate", "apply", "display", "save"};
+  enum command{Comment, Line, Circle, Bezier, Hermite, Ident, Scale, Move, Rotate, Apply, Display, Save};
+  char * commands[] = {"comment", "line", "circle", "bezier", "hermite", "ident", "scale", "move", "rotate", "apply", "display", "save"};
   FILE *f;
   char line[256];
   clear_grid(s);
@@ -14,10 +14,10 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
   while(fgets(line, 255, f) != NULL) {
     if(c == -1){
       line[strlen(line)-1]='\0';
-      for(int k = 0; k < 8; k++)
-	if(!strcmp(line, commands[k]))
+      for(int k = 0; k < 12; k++)
+	if(!strcmp(line, commands[k]) || (k == 0 && line[0] == '#'))
 	  c = k;
-      if(c == Ident || c == Apply || c == Display){
+      if(c == Ident || c == Apply || c == Display || c == Comment){
 	switch(c){
 	  case Ident:
 	    ident(transform);
@@ -42,7 +42,7 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
 
       }else{
 	line[strlen(line)-1]='\0';
-	char *a[7] = {0, 0, 0, 0, 0, 0, 0};
+	char *a[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 	char *ptr = strtok(line, " ");
 	int k = 0;
 	while (ptr != NULL){
@@ -53,6 +53,27 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
 	  case Line:
 	    add_line(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]));
 	    break;
+	  case Circle:
+	    //void circle(ELEMENT * e, double cx, double cy, double cz, double radius)
+	    circle(e, atoi(a[0]), atoi(a[1]), atoi(a[2]), atoi(a[3]));
+	    break;
+	  case Bezier:{
+	    int positions[] = {atoi(a[0]), atoi(a[1]), 0,
+			       atoi(a[2]), atoi(a[3]), 0,
+			       atoi(a[4]), atoi(a[5]), 0,
+			       atoi(a[6]), atoi(a[7]), 0};
+	    bezier(e, positions, 3, .05);
+	    break;
+	  }
+	  
+	  case Hermite:{
+	    double data[] = {atoi(a[0]), atoi(a[1]), 0,
+			     atoi(a[2]), atoi(a[3]), 0,
+			     atoi(a[4]), atoi(a[5]), 0,
+			     atoi(a[6]), atoi(a[7]), 0};
+	    hermite(e, data, .05);
+	    break;
+	  }
 	  case Scale:
 	    scale(transform, atoi(a[0]), atoi(a[1]), atoi(a[2]));
 	    break;
@@ -80,7 +101,7 @@ int main(int argc, char *argv[]){
   MATRIX * t = generate_matrix(4, 4);
   ident(t);
   ELEMENT * e = generate_element(40, 0);
-  GRID * g = generate_grid(400, 400);
+  GRID * g = generate_grid(500, 500);
   parse_file(argv[1], t, e, g);
   return 0;
 }

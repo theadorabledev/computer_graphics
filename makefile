@@ -1,4 +1,4 @@
-all: picmaker line matrix parser run
+all: picmaker line matrix parser bezier run
 
 picmaker: picmaker.c library
 	gcc -o picmaker picmaker.c library -lm
@@ -8,15 +8,25 @@ matrix: matrix.c library
 	gcc -o matrix matrix.c library -lm
 parser: parser.c library
 	gcc -o parser parser.c library -lm
-run: picmaker line matrix parser
+bezier: bezier.c library
+	gcc -o bezier bezier.c library -lm
+run: picmaker line matrix parser bezier
 	#./picmaker
 	#./line
 	#./matrix
-	echo "Testing parser functionality!"
-	./parser test_script "parser_test.ppm"
-	echo "Seems to work! Saved to parser_test.ppm"
+	#echo "Testing parser functionality!"
+	#./parser test_script "parser_test.ppm"
+	#echo "Seems to work! Saved to parser_test.ppm"
+	echo "Running test script."
+	./parser face_script
+
+	echo "Generating GIF \"Valley Of The Worm"\
+	#./bezier
 	make convert
+	#convert -delay 10 -loop 0 bezier_*[048].png bezier.gif
+	#echo "Saved to bezier.gif"
 	make clean
+	rm *.png
 display:
 	display *.png
 convert:
