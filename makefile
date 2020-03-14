@@ -18,9 +18,9 @@ run: picmaker line matrix parser bezier
 	#./parser test_script "parser_test.ppm"
 	#echo "Seems to work! Saved to parser_test.ppm"
 	echo "Running test script."
-	./parser face_script
+	./parser script
 
-	echo "Generating GIF \"Valley Of The Worm"\
+	#echo "Generating GIF \"Valley Of The Worm"\
 	#./bezier
 	make convert
 	#convert -delay 10 -loop 0 bezier_*[048].png bezier.gif

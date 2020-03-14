@@ -63,3 +63,6 @@ void rotate(MATRIX *m, double x_theta, double y_theta, double z_theta);
 void circle(ELEMENT * e, double cx, double cy, double cz, double radius);
 void bezier(ELEMENT * e, int positions[], int degree, double t_inc);
 void hermite(ELEMENT * e, double data[], double t_inc);
+
+void clear(ELEMENT * e);
+void box(ELEMENT *e, double x, double y, double z, double width, double height, double depth);

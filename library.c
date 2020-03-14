@@ -403,3 +403,25 @@ void hermite(ELEMENT * e, double data[], double t_inc){
   add_col(e, x, y, z);
 
 }
+
+void clear(ELEMENT * e){
+  MATRIX * m = e->matrix;
+  m->last_col = 0;
+  memset(m->data, 0, sizeof(double) * m->rows * m->columns);
+}
+void box(ELEMENT * e, double x, double y, double z, double width, double height, double depth){
+  add_line(e, x, y, z, x + width, y, z);
+  add_line(e, x, y, z, x, y - height, z);
+  add_line(e, x + width, y - height, z, x + width, y, z);
+  add_line(e, x + width, y - height, z, x, y - height, z);
+
+  add_line(e, x, y, z, x, y, z - depth);
+  add_line(e, x + width, y, z, x + width, y, z - depth);
+  add_line(e, x, y - height, z, x, y - height, z - depth);
+  add_line(e, x + width, y - height, z, x + width, y - height, z - depth);
+
+  add_line(e, x, y, z - depth, x + width, y, z - depth);
+  add_line(e, x, y, z - depth, x, y - height, z - depth);
+  add_line(e, x + width, y - height, z - depth, x + width, y, z - depth);
+  add_line(e, x + width, y - height, z - depth, x, y - height, z - depth);
+}

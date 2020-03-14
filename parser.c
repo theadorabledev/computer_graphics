@@ -1,8 +1,8 @@
 #include "library.h"
 
 void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
-  enum command{Comment, Line, Circle, Bezier, Hermite, Ident, Scale, Move, Rotate, Apply, Display, Save};
-  char * commands[] = {"comment", "line", "circle", "bezier", "hermite", "ident", "scale", "move", "rotate", "apply", "display", "save"};
+  enum command{Comment, Line, Circle, Bezier, Hermite, Box, Sphere, Torus, Clear, Ident, Scale, Move, Rotate, Apply, Display, Save};
+  char * commands[] = {"comment", "line", "circle", "bezier", "hermite", "box", "sphere", "torus", "clear", "ident", "scale", "move", "rotate", "apply", "display", "save"};
   FILE *f;
   char line[256];
   clear_grid(s);
@@ -14,10 +14,13 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
   while(fgets(line, 255, f) != NULL) {
     if(c == -1){
       line[strlen(line)-1]='\0';
-      for(int k = 0; k < 12; k++)
+
+      for(int k = 0; k < 16; k++)
 	if(!strcmp(line, commands[k]) || (k == 0 && line[0] == '#'))
 	  c = k;
-      if(c == Ident || c == Apply || c == Display || c == Comment){
+      printf("%s %d\n", line, c);
+      if(c == Ident || c == Apply || c == Display || c == Comment || c == Clear){
+	printf("---------------------------------------------------------%d\n", c);
 	switch(c){
 	  case Ident:
 	    ident(transform);
@@ -30,6 +33,10 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
 	    plot_element(e, s);
 	    write_image(s, "temp.ppm");
 	    system("display temp.ppm");
+	    printf("why the fuck?---------------------------------------------------\n");
+	    break;
+	  case Clear:
+	    clear(e);
 	    break;
 	}
 	c = -1;
@@ -54,7 +61,6 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
 	    add_line(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]));
 	    break;
 	  case Circle:
-	    //void circle(ELEMENT * e, double cx, double cy, double cz, double radius)
 	    circle(e, atoi(a[0]), atoi(a[1]), atoi(a[2]), atoi(a[3]));
 	    break;
 	  case Bezier:{
@@ -74,6 +80,9 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
 	    hermite(e, data, .05);
 	    break;
 	  }
+	  case Box:
+	    box(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]));
+	    break;
 	  case Scale:
 	    scale(transform, atoi(a[0]), atoi(a[1]), atoi(a[2]));
 	    break;
