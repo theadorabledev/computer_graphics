@@ -85,7 +85,7 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
 	    sphere(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]));
 	    break;
 	  case Torus:
-	    exit(0);
+	    torus(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]), atoi(a[4]));	    
 	    break;
 	  case Scale:
 	    scale(transform, atoi(a[0]), atoi(a[1]), atoi(a[2]));

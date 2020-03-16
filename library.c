@@ -451,4 +451,39 @@ void sphere(ELEMENT * e, double x, double y, double z, double r){
 	     m->data[0][i], m->data[1][i], m->data[2][i],
 	     m->data[0][i] + 0, m->data[1][i] + 0, m->data[2][i] + 0);
   }
+  free_matrix(m);
 }
+
+ELEMENT * generate_torus(double x, double y, double z, double R, double r){
+  ELEMENT * e = generate_element(102, rgb(255, 255, 255));
+  double t_inc = M_PI / 30;
+  for(double theta = 0; theta < 2 * M_PI; theta += t_inc){
+    for(double phi = 0; phi < 2 * M_PI; phi += t_inc){
+      /*add_col(e,
+		x + (r * cos(theta) * sin(phi)),
+		y + (r * sin(theta) * sin(phi)),
+		z + (r * cos(phi)));
+      */
+      add_col(e,
+	      x + (cos(theta) * (r * cos(phi) + R)),
+	      y + (r * sin(phi)),
+	      z - (sin(theta) * (r * cos(phi) + R)));
+
+      }
+  }
+  return e;
+}
+void torus(ELEMENT * e, double x, double y, double z, double r, double R){
+  ELEMENT * s = generate_torus(x, y, z, R, r);
+  MATRIX * m = s->matrix;
+  for(int i = 0; i < s->length; i++){
+    int t = (i + 60) % s->length;
+    add_line(e,
+	     m->data[0][i], m->data[1][i], m->data[2][i],
+	     m->data[0][t], m->data[1][t], m->data[2][t]);
+
+	     //m->data[0][i] + 0, m->data[1][i] + 0, m->data[2][i] + 0);
+  }
+  free_matrix(m);
+}
+
