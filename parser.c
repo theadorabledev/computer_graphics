@@ -20,7 +20,6 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
 	  c = k;
       printf("%s %d\n", line, c);
       if(c == Ident || c == Apply || c == Display || c == Comment || c == Clear){
-	printf("---------------------------------------------------------%d\n", c);
 	switch(c){
 	  case Ident:
 	    ident(transform);
@@ -33,7 +32,6 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
 	    plot_element(e, s);
 	    write_image(s, "temp.ppm");
 	    system("display temp.ppm");
-	    printf("why the fuck?---------------------------------------------------\n");
 	    break;
 	  case Clear:
 	    clear(e);
@@ -82,6 +80,12 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
 	  }
 	  case Box:
 	    box(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]));
+	    break;
+	  case Sphere:
+	    sphere(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]));
+	    break;
+	  case Torus:
+	    exit(0);
 	    break;
 	  case Scale:
 	    scale(transform, atoi(a[0]), atoi(a[1]), atoi(a[2]));

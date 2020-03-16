@@ -105,6 +105,7 @@ void draw_line_gentle(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
   }
 }
 void draw_line(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
+  //printf("%-4d %-4d - %-4d %-4d \n", x1, y1, x2, y2);
   double slope = (x2 - x1) ? ((y2 - y1) * 1.0 / (x2 - x1)) : INT_MAX;
   if(fabs(slope) <= 1.0){
     draw_line_gentle(grid, x1, y1, x2, y2, rgb);
@@ -197,6 +198,7 @@ void free_matrix(MATRIX * m){
   free(m);
 }
 void print_matrix(MATRIX * m){
+  printf("%d x %d \n", m->rows, m->columns);
   for(int r = 0; r < m->rows; r++){
     for(int c = 0; c < m->columns; c++){
       printf("%-7.2f ", m->data[r][c]);
@@ -206,9 +208,15 @@ void print_matrix(MATRIX * m){
   printf("\n");
 }
 void grow_matrix(MATRIX *m, int newcols){
+  newcols = newcols + (newcols % 2);
   for (int i = 0; i < m->rows; i++) {
-      m->data[i] = realloc(m->data[i],newcols*sizeof(double));
+    double * d = calloc(newcols, sizeof(double));
+    memcpy(d, m->data[i], sizeof(double) * m->columns);
+    free(m->data[i]);
+    m->data[i] = d;
+    //m->data[i] = realloc(m->data[i], newcols*sizeof(double));
   }
+  
   m->columns = newcols;
 }
 void copy_matrix(MATRIX * a, MATRIX * b){
@@ -218,7 +226,6 @@ void copy_matrix(MATRIX * a, MATRIX * b){
 }
 void multiply(MATRIX * a, MATRIX * b){
   MATRIX * t = generate_matrix(a->rows, b->columns);
-  //print_matrix(t);
   for (int r=0; r < a->rows; r++){
     for (int c=0; c < b->columns; c++){
       for(int i = 0; i < b->rows; i++) {
@@ -226,16 +233,11 @@ void multiply(MATRIX * a, MATRIX * b){
       }
     }
   }
-  //print_matrix(t);
-  //copy_matrix(t, b);
   free_matrix_data(b);
   b->rows = t->rows;
   b->columns = t->columns;
   b->last_col = t->last_col;
   b->data = t->data;
-  //free_matrix(t);
-  //free_matrix(b);
-  //b = t;
   free(t);
 }
 void multiple(MATRIX * a, MATRIX * b){
@@ -265,7 +267,6 @@ void project(MATRIX * m, double d){
   t->data[1][1] = 1;
   t->data[2][2] = 0;  
   t->data[3][2] = - 1 / d;
-  print_matrix(t);
   multiply(t, m);
   free(t);
 }
@@ -406,8 +407,12 @@ void hermite(ELEMENT * e, double data[], double t_inc){
 
 void clear(ELEMENT * e){
   MATRIX * m = e->matrix;
+  for(int i = 0; i < m->rows; i++){
+    memset(m->data[i], 0.0, sizeof(double) * m->columns);
+  }
+  e->length = 0;  
   m->last_col = 0;
-  memset(m->data, 0, sizeof(double) * m->rows * m->columns);
+  
 }
 void box(ELEMENT * e, double x, double y, double z, double width, double height, double depth){
   add_line(e, x, y, z, x + width, y, z);
@@ -424,4 +429,26 @@ void box(ELEMENT * e, double x, double y, double z, double width, double height,
   add_line(e, x, y, z - depth, x, y - height, z - depth);
   add_line(e, x + width, y - height, z - depth, x + width, y, z - depth);
   add_line(e, x + width, y - height, z - depth, x, y - height, z - depth);
+}
+ELEMENT * generate_sphere(double x, double y, double z, double r){
+  ELEMENT * e = generate_element(102, rgb(255, 255, 255));
+  double t_inc = M_PI / 60;
+  for(double theta = 0; theta < 2 * M_PI; theta += t_inc){
+    for(double phi = 0; phi < M_PI; phi += t_inc){
+	add_col(e,
+		x + (r * cos(theta) * sin(phi)),
+		y + (r * sin(theta) * sin(phi)),
+		z + (r * cos(phi)));
+      }
+  }
+  return e;
+}
+void sphere(ELEMENT * e, double x, double y, double z, double r){
+  ELEMENT * s = generate_sphere(x, y, z, r);
+  MATRIX * m = s->matrix;
+  for(int i = 0; i < s->length; i++){
+    add_line(e,
+	     m->data[0][i], m->data[1][i], m->data[2][i],
+	     m->data[0][i] + 0, m->data[1][i] + 0, m->data[2][i] + 0);
+  }
 }
