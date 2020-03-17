@@ -67,4 +67,4 @@ void hermite(ELEMENT * e, double data[], double t_inc);
 void clear(ELEMENT * e);
 void box(ELEMENT *e, double x, double y, double z, double width, double height, double depth);
 void sphere(ELEMENT * e, double x, double y, double z, double r);
-void torus(ELEMENT * e, double x, double y, double z, double R, double r);
+void torus(ELEMENT * e, double x, double y, double z, double r, double R);

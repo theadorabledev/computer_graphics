@@ -432,9 +432,9 @@ void box(ELEMENT * e, double x, double y, double z, double width, double height,
 }
 ELEMENT * generate_sphere(double x, double y, double z, double r){
   ELEMENT * e = generate_element(102, rgb(255, 255, 255));
-  double t_inc = M_PI / 60;
-  for(double theta = 0; theta < 2 * M_PI; theta += t_inc){
-    for(double phi = 0; phi < M_PI; phi += t_inc){
+  double t_inc = M_PI / 30;
+  for(double theta = 0; theta <= 2 * M_PI; theta += t_inc){
+    for(double phi = 0; phi <= M_PI; phi += t_inc){
 	add_col(e,
 		x + (r * cos(theta) * sin(phi)),
 		y + (r * sin(theta) * sin(phi)),
@@ -447,9 +447,16 @@ void sphere(ELEMENT * e, double x, double y, double z, double r){
   ELEMENT * s = generate_sphere(x, y, z, r);
   MATRIX * m = s->matrix;
   for(int i = 0; i < s->length; i++){
+    int t = (i + 30) % (60 * 30);
+    int a = (i + 1);
+    a = ((a % 30) && a % 30 != 1) ? a : i;
     add_line(e,
 	     m->data[0][i], m->data[1][i], m->data[2][i],
-	     m->data[0][i] + 0, m->data[1][i] + 0, m->data[2][i] + 0);
+	     m->data[0][t], m->data[1][t], m->data[2][t]);
+    add_line(e,
+	     m->data[0][i], m->data[1][i], m->data[2][i],
+	     m->data[0][a], m->data[1][a], m->data[2][a]);
+	     //m->data[0][i], m->data[1][i], m->data[2][i]);
   }
   free_matrix(m);
 }
@@ -459,11 +466,6 @@ ELEMENT * generate_torus(double x, double y, double z, double R, double r){
   double t_inc = M_PI / 30;
   for(double theta = 0; theta < 2 * M_PI; theta += t_inc){
     for(double phi = 0; phi < 2 * M_PI; phi += t_inc){
-      /*add_col(e,
-		x + (r * cos(theta) * sin(phi)),
-		y + (r * sin(theta) * sin(phi)),
-		z + (r * cos(phi)));
-      */
       add_col(e,
 	      x + (cos(theta) * (r * cos(phi) + R)),
 	      y + (r * sin(phi)),
