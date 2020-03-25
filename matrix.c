@@ -78,16 +78,16 @@ void four_angels_from_the_madness(){
     }
     plot_element(e, g);
     for(int i = 0; i < 10; i++){
-      double orig_x = - e->matrix->data[0][0];
-      double orig_y = - e->matrix->data[1][0];
-      double orig_z = - e->matrix->data[2][0];
-      translate(e->matrix, orig_x, orig_y, orig_z);
+      double orig_x = - e->edge_matrix->data[0][0];
+      double orig_y = - e->edge_matrix->data[1][0];
+      double orig_z = - e->edge_matrix->data[2][0];
+      translate(e->edge_matrix, orig_x, orig_y, orig_z);
       e->color = rgb(rand() % 255, rand() % 255, rand() % 255);
       double factor = pow(rand() % 5 + 1, rand() % 2 ? 1 : -1);
-      scale(e->matrix, factor, factor, 1);
-      rotate_z_axis(e->matrix, rand() % 360 * (M_PI / 180));
-      translate(e->matrix, - orig_x, - orig_y, - orig_z);
-      translate(e->matrix, 200 - random() % 400, 200 - random() % 400, 1);
+      scale(e->edge_matrix, factor, factor, 1);
+      rotate_z_axis(e->edge_matrix, rand() % 360 * (M_PI / 180));
+      translate(e->edge_matrix, - orig_x, - orig_y, - orig_z);
+      translate(e->edge_matrix, 200 - random() % 400, 200 - random() % 400, 1);
       plot_element(e, g);
     }
   }

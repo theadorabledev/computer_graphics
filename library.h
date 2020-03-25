@@ -16,9 +16,11 @@ typedef struct Grid{
 } GRID;
 typedef struct Element ELEMENT;
 typedef struct Element{
-  MATRIX * matrix;
+  MATRIX * edge_matrix;
+  MATRIX * triangle_matrix;
   int color;
   int length;
+  int triangle_length;
   ELEMENT * next_element;
   ELEMENT * children;
 } ELEMENT;

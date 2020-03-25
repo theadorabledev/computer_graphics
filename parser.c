@@ -25,7 +25,8 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
 	    ident(transform);
 	    break;
 	  case Apply:
-	    multiply(transform, e->matrix);
+	    multiply(transform, e->edge_matrix);
+	    multiply(transform, e->triangle_matrix);
 	    break;
 	  case Display:
 	    clear_grid(s);
