@@ -119,6 +119,33 @@ void draw_line_polar(GRID * grid, int x1, int y1, double r, double theta, int rg
   draw_line(grid, x1, y1, x1 + (int) (r * cos(theta)), y1 + (int) (r * sin(theta)), rgb);
 }
 
+VECTOR generate_vector(double x, double y, double z){
+  VECTOR v = calloc(sizeof(double) * 3, 1);
+  v[0] = x;
+  v[1] = y;
+  v[2] = z;
+  return v;
+}
+double dot_product(VECTOR a, VECTOR b){
+  return (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]);
+}
+VECTOR calculate_normal(MATRIX * matrix, int i){
+  double **m = matrix->data;
+  VECTOR a = generate_vector(m[0][i + 1] - m[0][i],
+			     m[1][i + 1] - m[1][i],
+			     m[2][i + 1] - m[2][i]);
+  VECTOR b = generate_vector(m[0][i + 2] - m[0][i],
+			     m[1][i + 2] - m[1][i],
+			     m[2][i + 2] - m[2][i]);
+  VECTOR n = generate_vector((a[1] * b[2]) - (a[2] * b[1]),
+			     (a[2] * b[0]) - (a[0] * b[2]),
+			     (a[0] * b[1]) - (a[1] * b[0]));
+  free(a);
+  free(b);
+  return n;
+}
+
+
 ELEMENT * generate_element(int size, int color){
   ELEMENT *e = (ELEMENT *)malloc(sizeof(ELEMENT));
   e->edge_matrix = generate_matrix(4, size * 2);
@@ -170,6 +197,7 @@ void add_child(ELEMENT * parent, ELEMENT * child){
 }
   
 void plot_element(ELEMENT * e, GRID * g){
+  VECTOR viewpoint = generate_vector(0, 0, 1);
   if(!e)
     return;
   MATRIX *m = e->edge_matrix;
@@ -178,9 +206,13 @@ void plot_element(ELEMENT * e, GRID * g){
   }
   m = e->triangle_matrix;
   for(int c = 0; c < m->columns; c += 3){
-    draw_line(g, (int)m->data[0][c], (int)m->data[1][c], (int)m->data[0][c + 1], (int)m->data[1][c + 1], e->color);
-    draw_line(g, (int)m->data[0][c], (int)m->data[1][c], (int)m->data[0][c + 2], (int)m->data[1][c + 2], e->color);
-    draw_line(g, (int)m->data[0][c + 1], (int)m->data[1][c + 1], (int)m->data[0][c + 2], (int)m->data[1][c + 2], e->color);
+    VECTOR n = calculate_normal(m, c);
+    if(dot_product(viewpoint, n) >= 0){
+      draw_line(g, (int)m->data[0][c], (int)m->data[1][c], (int)m->data[0][c + 1], (int)m->data[1][c + 1], e->color);
+      draw_line(g, (int)m->data[0][c], (int)m->data[1][c], (int)m->data[0][c + 2], (int)m->data[1][c + 2], e->color);
+      draw_line(g, (int)m->data[0][c + 1], (int)m->data[1][c + 1], (int)m->data[0][c + 2], (int)m->data[1][c + 2], e->color);
+    }
+    free(n);
   }
   plot_element(e->next_element, g);
   plot_element(e->children, g);
@@ -450,9 +482,9 @@ void box(ELEMENT * e, double x, double y, double z, double width, double height,
 		   points[p2][0], points[p2][1], points[p2][2],		\
 		   points[p3][0], points[p3][1], points[p3][2]);	\
       add_triangle(e,							\
-		   points[p2][0], points[p2][1], points[p2][2],		\
 		   points[p3][0], points[p3][1], points[p3][2],		\
-		   points[p4][0], points[p4][1], points[p4][2]);}) 
+		   points[p4][0], points[p4][1], points[p4][2],		\
+		   points[p1][0], points[p1][1], points[p1][2]);}) 
   
   t(0, 1, 2, 3);
   t(0, 3, 7, 4);
@@ -547,4 +579,7 @@ void torus(ELEMENT * e, double x, double y, double z, double r, double R){
   }
   free_matrix(m);
 }
+
+
+
 
