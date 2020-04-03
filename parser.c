@@ -3,8 +3,8 @@
 void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
-  enum command{Comment, Line, Circle, Bezier, Hermite, Box, Sphere, Torus, Push, Pop, Clear, Ident, Scale, Move, Rotate, Apply, Display, Save};
-  char * commands[] = {"comment", "line", "circle", "bezier", "hermite", "box", "sphere", "torus", "push", "pop", "clear", "ident", "scale", "move", "rotate", "apply", "display", "save"};
+  enum command{Comment, Display, Push, Pop, Line, Circle, Bezier, Hermite, Box, Sphere, Torus, Scale, Move, Rotate, Save};
+  char * commands[] = {"comment", "display", "push", "pop", "line", "circle", "bezier", "hermite", "box", "sphere", "torus", "scale", "move", "rotate", "save"};
   FILE *f;
   char line[256];
   clear_grid(s);
@@ -16,23 +16,12 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   while(fgets(line, 255, f) != NULL) {
     if(c == -1){
       line[strlen(line)-1]='\0';
-
-      for(int k = 0; k < 18; k++)
+      for(int k = 0; k < 15; k++)
 	if(!strcmp(line, commands[k]) || (k == 0 && line[0] == '#'))
 	  c = k;
-      //printf("%s %d\n", line, c);
-      if(c == Ident || c == Apply || c == Display || c == Comment || c == Clear || c == Push || c == Pop){
+      if(c < 4){
 	switch(c){
-	  case Ident:
-	    ident(transform);
-	    break;
-	  case Apply:
-	    multiply(transform, e->edge_matrix);
-	    multiply(transform, e->triangle_matrix);
-	    break;
 	  case Display:
-	    //clear_grid(s);
-	    //plot_element(e, s);
 	    write_image(s, "temp.ppm");
 	    system("display temp.ppm");
 	    break;
@@ -41,9 +30,6 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	    break;
 	  case Pop:
 	    stack = pop_from_stack(stack);
-	    break;
-	  case Clear:
-	    clear(e);
 	    break;
 	}
 	c = -1;
