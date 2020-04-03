@@ -3,11 +3,13 @@
 #include <string.h>
 #include <math.h>
 #include <limits.h>
+typedef struct Matrix MATRIX;
 typedef struct Matrix{
   int columns;
   int rows;
   double **data;
   int last_col;
+  MATRIX * next;
 } MATRIX;
 typedef struct Grid{
   int width;
@@ -54,6 +56,11 @@ void grow_matrix(MATRIX *m, int newcols);
 void copy_matrix(MATRIX * a, MATRIX * b);
 void multiply(MATRIX * a, MATRIX * b);
 
+
+MATRIX * push_to_stack(MATRIX * m);
+MATRIX * pop_from_stack(MATRIX * m);
+void transform_stack(MATRIX * m, MATRIX * t);
+ 
 
 void scale(MATRIX * m, double x, double y, double z);
 void project(MATRIX * m, double d);

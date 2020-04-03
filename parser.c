@@ -1,8 +1,10 @@
 #include "library.h"
 
-void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
-  enum command{Comment, Line, Circle, Bezier, Hermite, Box, Sphere, Torus, Clear, Ident, Scale, Move, Rotate, Apply, Display, Save};
-  char * commands[] = {"comment", "line", "circle", "bezier", "hermite", "box", "sphere", "torus", "clear", "ident", "scale", "move", "rotate", "apply", "display", "save"};
+void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
+  MATRIX * transform = generate_matrix(4, 4);
+  ident(transform);
+  enum command{Comment, Line, Circle, Bezier, Hermite, Box, Sphere, Torus, Push, Pop, Clear, Ident, Scale, Move, Rotate, Apply, Display, Save};
+  char * commands[] = {"comment", "line", "circle", "bezier", "hermite", "box", "sphere", "torus", "push", "pop", "clear", "ident", "scale", "move", "rotate", "apply", "display", "save"};
   FILE *f;
   char line[256];
   clear_grid(s);
@@ -15,11 +17,11 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
     if(c == -1){
       line[strlen(line)-1]='\0';
 
-      for(int k = 0; k < 16; k++)
+      for(int k = 0; k < 18; k++)
 	if(!strcmp(line, commands[k]) || (k == 0 && line[0] == '#'))
 	  c = k;
-      printf("%s %d\n", line, c);
-      if(c == Ident || c == Apply || c == Display || c == Comment || c == Clear){
+      //printf("%s %d\n", line, c);
+      if(c == Ident || c == Apply || c == Display || c == Comment || c == Clear || c == Push || c == Pop){
 	switch(c){
 	  case Ident:
 	    ident(transform);
@@ -29,10 +31,16 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
 	    multiply(transform, e->triangle_matrix);
 	    break;
 	  case Display:
-	    clear_grid(s);
-	    plot_element(e, s);
+	    //clear_grid(s);
+	    //plot_element(e, s);
 	    write_image(s, "temp.ppm");
 	    system("display temp.ppm");
+	    break;
+	  case Push:
+	    stack = push_to_stack(stack);
+	    break;
+	  case Pop:
+	    stack = pop_from_stack(stack);
 	    break;
 	  case Clear:
 	    clear(e);
@@ -90,9 +98,13 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
 	    break;
 	  case Scale:
 	    scale(transform, atoi(a[0]), atoi(a[1]), atoi(a[2]));
+	    transform_stack(stack, transform);
+	    ident(transform);
 	    break;
 	  case Move:
 	    translate(transform, atoi(a[0]), atoi(a[1]), atoi(a[2]));
+	    transform_stack(stack, transform);
+	    ident(transform);
 	    break;
 	  case Rotate:
 	    switch(a[0][0]){
@@ -103,8 +115,14 @@ void parse_file ( char * filename, MATRIX * transform, ELEMENT * e, GRID * s) {
 	      case 'z': rotate_z_axis(transform, atoi(a[1]) * M_PI / 180.0);
 		break;		
 	    }
+	    transform_stack(stack, transform);
+	    ident(transform);
 	    break;
 	}
+	multiply(stack, e->edge_matrix);
+	multiply(stack, e->triangle_matrix);
+	plot_element(e, s);
+	clear(e);
       }
       c = -1;
     }

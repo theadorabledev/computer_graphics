@@ -232,7 +232,7 @@ MATRIX * generate_matrix(int rows, int cols){
   m->rows = rows;
   m->columns = cols;
   m->last_col = 0;
-
+  m->next = NULL;
   return m;
 }
 void free_matrix_data(MATRIX * m){
@@ -298,6 +298,23 @@ void ident(MATRIX * m){
       m->data[r][c] = (r == c);
     }
   }
+}
+
+MATRIX * push_to_stack(MATRIX * m){
+  MATRIX * new = generate_matrix(4, 4);
+  copy_matrix(m, new);
+  new->next = m;
+  return new;
+}
+MATRIX * pop_from_stack(MATRIX * m){
+  MATRIX * next = m->next;
+  free_matrix(m);
+  return next;
+}
+void transform_stack(MATRIX * m, MATRIX * t){
+  multiply(m, t);
+  copy_matrix(t, m);
+  //free(t);
 }
 
 void scale(MATRIX * m, double x, double y, double z){
