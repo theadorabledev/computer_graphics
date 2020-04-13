@@ -77,7 +77,7 @@ void draw_line_vertical(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
   while(y1 <= y2){
     plot(grid, x1, y1, rgb);
     y1 += 1;
-  }  
+  }
 }
 void draw_line_gentle(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
   if(x2 < x1){
@@ -195,8 +195,61 @@ void add_child(ELEMENT * parent, ELEMENT * child){
   else
     parent->children = child;
 }
-  
+
+void swap(int *a, int *b){
+  int temp = *a;
+  *a = *b;
+  *b = temp;
+}
+void draw_scanline(GRID * g, int x1, int x2, int y, int color){
+  if(x1 > x2)
+    swap(&x1, &x2);
+  while(x1 < x2){
+    plot(g, x1, y, color);
+    x1++;
+  }
+}
+
+void draw_triangle(ELEMENT * e, GRID * g, int c){
+  MATRIX * m = e->triangle_matrix;
+  int top = c, mid = c + 1, bot = c + 2;
+  if(m->data[1][top] < m->data[1][mid])
+    swap(&top, &mid);
+  if(m->data[1][mid] < m->data[1][bot])
+    swap(&mid, &bot);
+  if(m->data[1][top] < m->data[1][mid])
+    swap(&top, &mid);
+  if(m->data[1][mid] == m->data[1][bot] && m->data[0][mid] < m->data[0][bot])
+  swap(&mid, &bot);
+  int y = m->data[1][bot];
+  int y_mid = m->data[1][mid];
+  int y_top = m->data[1][top];
+
+  double x1 = m->data[0][bot];
+  double x2 = m->data[0][bot];
+  if(y == y_mid)
+    x2 = m->data[0][mid];
+  double base_dx = (m->data[0][top] - m->data[0][bot]) / (y_top - y);
+  if(!(y_top - y))
+    base_dx = 0;
+  double dx_1 = (m->data[0][mid] - m->data[0][bot]) / (y_mid - y);
+  double dx_2 = (m->data[0][top] - m->data[0][mid]) / (y_top - y_mid);
+  plot(g, x1, y, rgb(255, 0, 0));
+  while(y < y_mid){
+    draw_scanline(g, (int)x1, (int)x2, y, e->color);
+    x1 += base_dx;
+    x2 += dx_1;
+    y += 1;
+  }
+  while(y <= y_top){
+    draw_scanline(g, (int) x1, (int) x2, y, e->color);
+    x1 += base_dx;
+    x2 += dx_2;
+    y += 1;
+  }
+}
 void plot_element(ELEMENT * e, GRID * g){
+  srand(20);
   VECTOR viewpoint = generate_vector(0, 0, 1);
   if(!e)
     return;
@@ -205,9 +258,13 @@ void plot_element(ELEMENT * e, GRID * g){
     draw_line(g, (int)m->data[0][c], (int)m->data[1][c], (int)m->data[0][c + 1], (int)m->data[1][c + 1], e->color);
   }
   m = e->triangle_matrix;
-  for(int c = 0; c < m->columns; c += 3){
+  for(int c = 0; c < e->triangle_length; c += 3){
     VECTOR n = calculate_normal(m, c);
     if(dot_product(viewpoint, n) >= 0){
+
+      e->color = rgb(rand() % 256, rand() % 256, rand() % 256);
+      draw_triangle(e, g, c);
+
       draw_line(g, (int)m->data[0][c], (int)m->data[1][c], (int)m->data[0][c + 1], (int)m->data[1][c + 1], e->color);
       draw_line(g, (int)m->data[0][c], (int)m->data[1][c], (int)m->data[0][c + 2], (int)m->data[1][c + 2], e->color);
       draw_line(g, (int)m->data[0][c + 1], (int)m->data[1][c + 1], (int)m->data[0][c + 2], (int)m->data[1][c + 2], e->color);
@@ -257,7 +314,7 @@ void print_matrix(MATRIX * m){
 }
 void grow_matrix(MATRIX *m, int newcols){
   newcols = newcols + (newcols % 2);
-  
+
   for (int i = 0; i < m->rows; i++) {
     double * d = calloc(newcols, sizeof(double));
     memcpy(d, m->data[i], sizeof(double) * m->columns);
@@ -265,13 +322,13 @@ void grow_matrix(MATRIX *m, int newcols){
     m->data[i] = d;
     //m->data[i] = realloc(m->data[i], newcols*sizeof(double));
   }
-  
+
   m->columns = newcols;
 }
 void copy_matrix(MATRIX * a, MATRIX * b){
-  for (int r=0; r < a->rows; r++) 
-    for (int c=0; c < a->columns; c++)  
-      b->data[r][c] = a->data[r][c];  
+  for (int r=0; r < a->rows; r++)
+    for (int c=0; c < a->columns; c++)
+      b->data[r][c] = a->data[r][c];
 }
 void multiply(MATRIX * a, MATRIX * b){
   MATRIX * t = generate_matrix(a->rows, b->columns);
@@ -331,7 +388,7 @@ void project(MATRIX * m, double d){
   ident(t);
   t->data[0][0] = 1;
   t->data[1][1] = 1;
-  t->data[2][2] = 0;  
+  t->data[2][2] = 0;
   t->data[3][2] = - 1 / d;
   multiply(t, m);
   free(t);
@@ -398,7 +455,7 @@ void circle(ELEMENT * e, double cx, double cy, double cz, double radius){
     get_point_polar(cx, cy, theta + t_inc, radius, &xn, &yn);
     add_line(e, x, y, cz, xn, yn, cz);
   }
-  
+
 }
 void bezier(ELEMENT * e, int positions[], int degree, double t_inc){
   double t, x, y, z = 0;
@@ -476,17 +533,21 @@ void clear(ELEMENT * e){
   for(int i = 0; i < m->rows; i++){
     memset(m->data[i], 0.0, sizeof(double) * m->columns);
   }
-  e->length = 0;  
+  e->length = 0;
   m->last_col = 0;
 
-  
+
   m = e->triangle_matrix;
+  //print_matrix(m);
   for(int i = 0; i < m->rows; i++){
+    //free(m->data[i]);
+    //m->data[i] = (double *)calloc(m->columns * sizeof(double), 1);
     memset(m->data[i], 0.0, sizeof(double) * m->columns);
   }
-  e->length = 0;  
-  m->last_col = 0;  
-  
+  //print_matrix(m);
+  m->last_col = 0;
+  e->triangle_length = 0;
+
 }
 void box(ELEMENT * e, double x, double y, double z, double width, double height, double depth){
   //Very bad C practice
@@ -501,8 +562,8 @@ void box(ELEMENT * e, double x, double y, double z, double width, double height,
       add_triangle(e,							\
 		   points[p3][0], points[p3][1], points[p3][2],		\
 		   points[p4][0], points[p4][1], points[p4][2],		\
-		   points[p1][0], points[p1][1], points[p1][2]);}) 
-  
+		   points[p1][0], points[p1][1], points[p1][2]);})
+
   t(0, 1, 2, 3);
   t(0, 3, 7, 4);
   t(3, 2, 6, 7);
@@ -510,23 +571,20 @@ void box(ELEMENT * e, double x, double y, double z, double width, double height,
   t(1, 0, 4, 5);
   t(7, 6, 5, 4);
   #undef t
-  
-
-  
 }
 ELEMENT * generate_sphere(double x, double y, double z, double r){
-  ELEMENT * e = generate_element(102, rgb(255, 255, 255));
   int res = 20;
+  ELEMENT * e = generate_element(res * res + 1, rgb(255, 255, 255));
   double t_inc = M_PI / res;
   double p_inc = M_PI / (res - 1);
   for(int t = 0; t < 2 * res; t++){
     for(int p = 0; p < res; p++){
       double theta = t * t_inc;
       double phi = p * p_inc;
-	add_col(e,
-		x + (r * cos(theta) * sin(phi)),
-		y + (r * sin(theta) * sin(phi)),
-		z + (r * cos(phi)), 0);
+      add_col(e,
+	      x + (r * cos(theta) * sin(phi)),
+	      y + (r * sin(theta) * sin(phi)),
+	      z + (r * cos(phi)), 0);
       }
   }
   return e;
@@ -552,6 +610,7 @@ void sphere(ELEMENT * e, double x, double y, double z, double r){
 		   m->data[0][q], m->data[1][q], m->data[2][q],
 		   m->data[0][a], m->data[1][a], m->data[2][a]);
   }
+
   free_matrix(m);
 }
 
@@ -583,7 +642,7 @@ void torus(ELEMENT * e, double x, double y, double z, double r, double R){
      */
     int a = i + 1;
     a = (a % (2 * res)) ? a : a - 2 * res;
-    int t = (i + 2 * res) % s->length;    
+    int t = (i + 2 * res) % s->length;
     int q = (a + 2 * res) % s->length;
     add_triangle(e,
 		 m->data[0][i], m->data[1][i], m->data[2][i],
@@ -596,7 +655,3 @@ void torus(ELEMENT * e, double x, double y, double z, double r, double R){
   }
   free_matrix(m);
 }
-
-
-
-
