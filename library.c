@@ -7,14 +7,28 @@ GRID * generate_grid(int width, int height){
     rows[i] = values + i * width;
   }
   m->data = rows;
+
+  double * z_vals = calloc(width * height, sizeof(double));
+  double** z_rows = malloc(height * sizeof(double*));
+  for (int i=0; i<height; ++i){
+    z_rows[i] = z_vals + i * width;
+    memset(z_rows[i], -DBL_MAX, sizeof(double) * width);
+  }
+  m->z_buffer = z_rows;
+  //memset(z_rows, -DBL_MAX, sizeof(double) * width * height);
   m->width = width;
   m->height = height;
   return m;
 }
-void plot(GRID * grid, int x, int y, int rgb){
+void plot(GRID * grid, int x, int y, double z, int rgb){
   if (y < 0 || x < 0 || x >= grid->width || y >= grid->height)
     return;
-  grid->data[grid->height - 1 - y][x] = rgb;
+  //printf("(%d %d %f, %f)", x, y, z, grid->z_buffer[grid->height - 1 - y][x]);
+  if(z > grid->z_buffer[grid->height - 1 - y][x]){
+    grid->z_buffer[grid->height - 1 - y][x] = z;
+    grid->data[grid->height - 1 - y][x] = rgb;
+  }
+  //printf("-->(%d %d %f, %f) \n", x, y, z, grid->z_buffer[grid->height - 1 - y][x]);
 }
 int rgb(int r, int g, int b){
   return((r&0x0ff)<<16)|((g&0x0ff)<<8)|(b&0x0ff);
@@ -40,83 +54,87 @@ int write_image(GRID * grid, char * filename){
 }
 void clear_grid(GRID * grid){
   for(int y = 0; y < grid->height; y++)
-    for(int x = 0; x < grid->width; x++)
+    for(int x = 0; x < grid->width; x++){
       grid->data[y][x] = rgb(255, 255, 255);
+      grid->z_buffer[y][x] = -DBL_MAX;
+    }
 }
-void draw_line_steep(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
+void draw_line_steep(GRID * grid, int x1, int y1, double z1, int x2, int y2, double z2, int rgb){
   if(y2 < y1){
-    int temp = x2;
-    x2 = x1;
-    x1 = temp;
-    temp = y2;
-    y2 = y1;
-    y1 = temp;
+    SWAP(x1, x2, int);
+    SWAP(y1, y2, int);
+    SWAP(z1, z2, double);
   }
+  double delta_z = z2 - z1;
   int delta_y = y2 - y1;
   int delta_x = x2 - x1;
   int x_inc = delta_x/abs(delta_x);
+  double z_inc = delta_z / delta_y;
   if(x_inc < 0)
     delta_x = -delta_x;
-  int d = 2 * delta_x - delta_y;
+  int dx = 2 * delta_x - delta_y;
   while(y1 <= y2){
-    plot(grid, x1, y1, rgb);
-    if(d >= 0){
+    plot(grid, x1, y1, z1, rgb);
+    if(dx >= 0){
       x1 += x_inc;
-      d -= (2 * delta_y);
+      dx -= (2 * delta_y);
     }
+    z1 += z_inc;
     y1 += 1;
-    d += (2 * delta_x);
+    dx += (2 * delta_x);
   }
 }
-void draw_line_vertical(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
+void draw_line_vertical(GRID * grid, int x1, int y1, double z1, int x2, int y2, double z2, int rgb){
   if(y2 < y1){
-    int temp = y2;
-    y2 = y1;
-    y1 = temp;
+    SWAP(y1, y2, int);
+    SWAP(z1, z2, double);
   }
+  double delta_z = z2 - z1;
+  double z_inc = delta_z /(y2 - y1);
   while(y1 <= y2){
-    plot(grid, x1, y1, rgb);
+    plot(grid, x1, y1, z1, rgb);
+    z1 += z_inc;
     y1 += 1;
   }
 }
-void draw_line_gentle(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
+void draw_line_gentle(GRID * grid, int x1, int y1, double z1, int x2, int y2, double z2, int rgb){
   if(x2 < x1){
-    int temp = x2;
-    x2 = x1;
-    x1 = temp;
-    temp = y2;
-    y2 = y1;
-    y1 = temp;
+    SWAP(x1, x2, int);
+    SWAP(y1, y2, int);
+    SWAP(z1, z2, double);
   }
+  double delta_z = z2 - z1;
   int delta_y = y2 - y1;
   int delta_x = x2 - x1;
   int y_inc = delta_y ? delta_y/abs(delta_y) : 1;
+  double z_inc = delta_z / delta_x;
   if(y_inc < 0)
     delta_y = -delta_y;
   int d = 2 * delta_y - delta_x;
   while(x1 <= x2){
-    plot(grid, x1, y1, rgb);
+    plot(grid, x1, y1, z1, rgb);
     if(d >= 0){
       y1 += y_inc;
       d -= (2 * delta_x);
     }
     x1 += 1;
+    z1 += z_inc;
     d += (2 * delta_y);
   }
 }
-void draw_line(GRID * grid, int x1, int y1, int x2, int y2, int rgb){
+void draw_line(GRID * grid, int x1, int y1, double z1, int x2, int y2, double z2, int rgb){
   //printf("%-4d %-4d - %-4d %-4d \n", x1, y1, x2, y2);
   double slope = (x2 - x1) ? ((y2 - y1) * 1.0 / (x2 - x1)) : INT_MAX;
   if(fabs(slope) <= 1.0){
-    draw_line_gentle(grid, x1, y1, x2, y2, rgb);
+    draw_line_gentle(grid, x1, y1, z1, x2, y2, z2, rgb);
   }else if(slope == INT_MAX){
-    draw_line_vertical(grid, x1, y1, x2, y2, rgb);
+    draw_line_vertical(grid, x1, y1, z1, x2, y2, z2, rgb);
   }else{
-    draw_line_steep(grid, x1, y1, x2, y2, rgb);
+    draw_line_steep(grid, x1, y1, z1, x2, y2, z2, rgb);
   }
 }
 void draw_line_polar(GRID * grid, int x1, int y1, double r, double theta, int rgb){
-  draw_line(grid, x1, y1, x1 + (int) (r * cos(theta)), y1 + (int) (r * sin(theta)), rgb);
+  draw_line(grid, x1, y1, 0, x1 + (int) (r * cos(theta)), y1 + (int) (r * sin(theta)), 0, rgb);
 }
 
 VECTOR generate_vector(double x, double y, double z){
@@ -196,66 +214,92 @@ void add_child(ELEMENT * parent, ELEMENT * child){
     parent->children = child;
 }
 
-void swap(int *a, int *b){
-  int temp = *a;
-  *a = *b;
-  *b = temp;
-}
-void draw_scanline(GRID * g, int x1, int x2, int y, int color){
+void draw_scanline(GRID * g, int x1, int x2, int y, double z1, double z2, int color){
+  double dz = (z2 - z1) / (x2 - x1);
   if(x1 > x2)
-    swap(&x1, &x2);
+    SWAP(x1, x2, int);
   while(x1 < x2){
-    plot(g, x1, y, color);
+    plot(g, x1, y, z1, color);
+    z1 += dz;
     x1++;
   }
 }
 
 void draw_triangle(ELEMENT * e, GRID * g, int c){
   MATRIX * m = e->triangle_matrix;
+  //Find the top bottom and middle of the triangle
   int top = c, mid = c + 1, bot = c + 2;
   if(m->data[1][top] < m->data[1][mid])
-    swap(&top, &mid);
+    SWAP(top, mid, int);
   if(m->data[1][mid] < m->data[1][bot])
-    swap(&mid, &bot);
+    SWAP(mid, bot, int);
   if(m->data[1][top] < m->data[1][mid])
-    swap(&top, &mid);
+    SWAP(top, mid, int);
+  if(m->data[1][top] == m->data[1][mid] && m->data[0][top] > m->data[0][mid])
+    SWAP(top, mid, int);
   if(m->data[1][mid] == m->data[1][bot] && m->data[0][mid] < m->data[0][bot])
-  swap(&mid, &bot);
+    SWAP(mid, bot, int);
+
+  //Setup the variables for the loop
   int y = m->data[1][bot];
   int y_mid = m->data[1][mid];
   int y_top = m->data[1][top];
 
   double x1 = m->data[0][bot];
   double x2 = m->data[0][bot];
-  if(y == y_mid)
+
+  double z1 = m->data[2][bot];
+  double z2 = m->data[2][bot];
+
+  //Flat bottom
+  if(y == y_mid){
     x2 = m->data[0][mid];
-  double base_dx = (m->data[0][top] - m->data[0][bot]) / (y_top - y);
-  if(!(y_top - y))
-    base_dx = 0;
+    z2 = m->data[2][mid];
+  }
+  //Get rates of change for the various sides of the triangle
+  double dx_0 = (m->data[0][top] - m->data[0][bot]) / (y_top - y);
   double dx_1 = (m->data[0][mid] - m->data[0][bot]) / (y_mid - y);
   double dx_2 = (m->data[0][top] - m->data[0][mid]) / (y_top - y_mid);
-  plot(g, x1, y, rgb(255, 0, 0));
+
+  double dz_0 = (m->data[2][top] - m->data[2][bot]) / (y_top - y);
+  double dz_1 = (m->data[2][mid] - m->data[2][bot]) / (y_mid - y);
+  double dz_2 = (m->data[2][top] - m->data[2][mid]) / (y_top - y_mid);
+  /* printf("%d -- (%d %d %d) (%d %d %d) (%d %d %d) \n", c, */
+  /* 	 (int) m->data[0][top], (int) m->data[1][top], (int) m->data[2][top], */
+  /* 	 (int) m->data[0][mid], (int) m->data[1][mid], (int) m->data[2][mid], */
+  /* 	 (int) m->data[0][bot], (int) m->data[1][bot], (int) m->data[2][bot] */
+  /* 	 ); */
+
+  if(!(y_top - y)){
+    dx_0 = 0;
+
+  }
   while(y < y_mid){
-    draw_scanline(g, (int)x1, (int)x2, y, e->color);
-    x1 += base_dx;
+    draw_scanline(g, (int) x1, (int) x2, y, z1, z2, e->color);
+    x1 += dx_0;
     x2 += dx_1;
+    z1 += dz_0;
+    z2 += dz_1;
     y += 1;
   }
   while(y <= y_top){
-    draw_scanline(g, (int) x1, (int) x2, y, e->color);
-    x1 += base_dx;
+    draw_scanline(g, (int) x1, (int) x2, y, z1, z2, e->color);
+    x1 += dx_0;
     x2 += dx_2;
+    z1 += dz_0;
+    z2 += dz_2;
     y += 1;
   }
 }
 void plot_element(ELEMENT * e, GRID * g){
-  srand(20);
   VECTOR viewpoint = generate_vector(0, 0, 1);
   if(!e)
     return;
   MATRIX *m = e->edge_matrix;
   for(int c = 0; c < m->columns; c += 2){
-    draw_line(g, (int)m->data[0][c], (int)m->data[1][c], (int)m->data[0][c + 1], (int)m->data[1][c + 1], e->color);
+    draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
+	      (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
+	      e->color);
   }
   m = e->triangle_matrix;
   for(int c = 0; c < e->triangle_length; c += 3){
@@ -264,10 +308,15 @@ void plot_element(ELEMENT * e, GRID * g){
 
       e->color = rgb(rand() % 256, rand() % 256, rand() % 256);
       draw_triangle(e, g, c);
-
-      draw_line(g, (int)m->data[0][c], (int)m->data[1][c], (int)m->data[0][c + 1], (int)m->data[1][c + 1], e->color);
-      draw_line(g, (int)m->data[0][c], (int)m->data[1][c], (int)m->data[0][c + 2], (int)m->data[1][c + 2], e->color);
-      draw_line(g, (int)m->data[0][c + 1], (int)m->data[1][c + 1], (int)m->data[0][c + 2], (int)m->data[1][c + 2], e->color);
+      draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
+	      (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
+	      e->color);
+      draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
+	      (int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
+	      e->color);
+      draw_line(g, (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
+		(int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
+		e->color);
     }
     free(n);
   }

@@ -3,6 +3,10 @@
 #include <string.h>
 #include <math.h>
 #include <limits.h>
+#include <float.h>
+
+#define SWAP(a,b,type) {type ttttttttt=a;a=b;b=ttttttttt;}
+
 typedef struct Matrix MATRIX;
 typedef struct Matrix{
   int columns;
@@ -15,6 +19,7 @@ typedef struct Grid{
   int width;
   int height;
   int **data;
+  double **z_buffer;
 } GRID;
 typedef struct Element ELEMENT;
 typedef struct Element{
@@ -29,10 +34,10 @@ typedef struct Element{
 
 typedef double* VECTOR;
 GRID * generate_grid(int width, int height);
-void plot(GRID * grid, int x, int y, int rgb);
+void plot(GRID * grid, int x, int y, double z, int rgb);
 void clear_grid(GRID * grid);
 int write_image(GRID * grid, char * filename);
-void draw_line(GRID * grid, int x1, int y1, int x2, int y2, int rgb);
+void draw_line(GRID * grid, int x1, int y1, double z1, int x2, int y2, double z2, int rgb);
 void draw_line_polar(GRID * grid, int x1, int y1, double r, double theta, int rgb);
 int rgb(int r, int g, int b);
 void get_point_polar(int x, int y, double theta, double r, int *xn, int *yn);
