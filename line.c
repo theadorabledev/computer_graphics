@@ -11,33 +11,33 @@ void line_test(){
   GRID * m = generate_grid(x_max, y_max);
   for (y = 0; y < y_max; y++) {
     for (x = 0; x < x_max; x++) {
-      plot(m, x, y, 0);
+      plot(m, x, y, 0, 0);
     }
   }
   // Quadrant 1
-  draw_line(m, 25, 25, 35, 25, rgb(255, 0, 0));
-  draw_line(m, 25, 25, 35, 30, rgb(255, 0, 0));
-  draw_line(m, 25, 25, 35, 35, rgb(255, 0, 0));
+  draw_line(m, 25, 25, 0, 35, 25, 0, rgb(255, 0, 0));
+  draw_line(m, 25, 25, 0, 35, 30, 0, rgb(255, 0, 0));
+  draw_line(m, 25, 25, 0, 35, 35, 0, rgb(255, 0, 0));
   // Quadrant 2
-  draw_line(m, 25, 25, 30, 35, rgb(0, 255, 0));
-  draw_line(m, 25, 25, 25, 35, rgb(0, 255, 0));
+  draw_line(m, 25, 25, 0, 30, 35, 0, rgb(0, 255, 0));
+  draw_line(m, 25, 25, 0, 25, 35, 0, rgb(0, 255, 0));
   // Quadrant 3
-  draw_line(m, 25, 25, 15, 35, rgb(0, 0, 255));
-  draw_line(m, 25, 25, 20, 35, rgb(0, 0, 255));
+  draw_line(m, 25, 25, 0, 15, 35, 0, rgb(0, 0, 255));
+  draw_line(m, 25, 25, 0, 20, 35, 0, rgb(0, 0, 255));
   // QUADRANT 4
-  draw_line(m, 25, 25, 15, 30, rgb(255, 255, 0));
-  draw_line(m, 25, 25, 15, 25, rgb(255, 255, 0));
+  draw_line(m, 25, 25, 0, 15, 30, 0, rgb(255, 255, 0));
+  draw_line(m, 25, 25, 0, 15, 25, 0, rgb(255, 255, 0));
   // Quadrant 5
-  draw_line(m, 25, 25, 15, 20, rgb(0, 255, 255));
-  draw_line(m, 25, 25, 15, 15, rgb(0, 255, 255));
+  draw_line(m, 25, 25, 0, 15, 20, 0, rgb(0, 255, 255));
+  draw_line(m, 25, 25, 0, 15, 15, 0, rgb(0, 255, 255));
   // Quadrant 6
-  draw_line(m, 25, 25, 20, 15, rgb(255, 0, 255));
-  draw_line(m, 25, 25, 25, 15, rgb(255, 0, 255));
+  draw_line(m, 25, 25, 0, 20, 15, 0, rgb(255, 0, 255));
+  draw_line(m, 25, 25, 0, 25, 15, 0, rgb(255, 0, 255));
   // Quadrant 7
-  draw_line(m, 25, 25, 30, 15, rgb(255, 255, 255));
-  draw_line(m, 25, 25, 35, 15, rgb(255, 255, 255));
+  draw_line(m, 25, 25, 0, 30, 15, 0, rgb(255, 255, 255));
+  draw_line(m, 25, 25, 0, 35, 15, 0, rgb(255, 255, 255));
   // Quadrant 8
-  draw_line(m, 25, 25, 35, 20, rgb(0, 255, 255));
+  draw_line(m, 25, 25, 0, 35, 20, 0, rgb(0, 255, 255));
   write_image(m, filename);
   printf("Test saved to line_test.ppm\n");
 }
@@ -59,11 +59,11 @@ int main(){
     for (x = 0; x < x_max; x++) {
       double d = distance(cx, cy, x, y);
       d = 1 - d / distance(cx, cy, x_max, y_max);
-      plot(m, x, y, rgb(255 * d, 255 * d,  255 * d));
+      plot(m, x, y, 0, rgb(255 * d, 255 * d,  255 * d));
     }
   }
   for(int i = 0; i < 1; i++){
-    draw_line(m, rand() % xbu, rand() % ybu, rand() % xbu + xbl, rand() % ybu + xbl, rgb(rand() % 255, rand() % 255, rand() % 255));
+    draw_line(m, rand() % xbu, rand() % ybu, 0, rand() % xbu + xbl, rand() % ybu + xbl, 0, rgb(rand() % 255, rand() % 255, rand() % 255));
   }
   for(int i = 0; i < 1000; i++){
     int r = rand() % 255;
@@ -80,7 +80,7 @@ int main(){
       }
     }else{
       for(int k = 0; k < 5; k++){
-	draw_line(m, rand() % xbu, rand() % ybu, rand() % xbu + xbl, rand() % ybu + ybl, rgb(r, g, b));
+	draw_line(m, rand() % xbu, rand() % ybu, 0, rand() % xbu + xbl, rand() % ybu + ybl, 0, rgb(r, g, b));
       }
     }
 
@@ -91,7 +91,7 @@ int main(){
       double d = distance(cx, cy, x, y);
       if(d <= r){
 	d = 1 - (d / r);
-	plot(m, x, y, rgb(255 * d, 255 * d, 255 * d));
+	plot(m, x, y, 0, rgb(255 * d, 255 * d, 255 * d));
       }
     } 
   }

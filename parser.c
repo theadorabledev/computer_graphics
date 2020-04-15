@@ -116,6 +116,7 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 }
 
 int main(int argc, char *argv[]){
+  srand(20);
   MATRIX * t = generate_matrix(4, 4);
   ident(t);
   ELEMENT * e = generate_element(40, 0);

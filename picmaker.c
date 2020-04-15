@@ -10,7 +10,7 @@ int main(){
   GRID * m = generate_grid(x_max, y_max);
   for (y = 0; y < y_max; y++) {
     for (x = 0; x < x_max * 3; x += 3) {
-      plot(m, x / 3, y,
+      plot(m, x / 3, y, 0,
 	   rgb((x + y) & 255,
 	       (x + 1 + y) & 255,
 	       (x + 2 + y) & 255));
@@ -26,7 +26,7 @@ int main(){
     for (y = 0; y < y_max; y++) {
       for (x = 0; x < x_max; x++) {
 	if(distance(x, y, c_x, c_y) < radius){
-	  plot(m, x, y,
+	  plot(m, x, y, 0,
 	       rgb(r + 5 * distance(x, y, c_x, c_y),
 		   g + 5 * distance(x, y, c_x, c_y),
 		   b + 5 * distance(x, y, c_x, c_y)));
