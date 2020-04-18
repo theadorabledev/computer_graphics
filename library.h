@@ -65,7 +65,8 @@ void multiply(MATRIX * a, MATRIX * b);
 MATRIX * push_to_stack(MATRIX * m);
 MATRIX * pop_from_stack(MATRIX * m);
 void transform_stack(MATRIX * m, MATRIX * t);
- 
+
+void speckle(ELEMENT * e, int x, int y, int z, int width, int height, int depth, int density , int radius, int spiked);
 
 void scale(MATRIX * m, double x, double y, double z);
 void project(MATRIX * m, double d);

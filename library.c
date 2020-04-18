@@ -423,6 +423,34 @@ void transform_stack(MATRIX * m, MATRIX * t){
   //free(t);
 }
 
+void speckle(ELEMENT * e, int x, int y, int z, int width, int height, int depth, int density , int radius, int spiked){
+  width += x;
+  height += y;
+  depth += z;
+  radius += 1;
+  printf("%d %d %d\n", x ,y, z);
+  printf("%d %d %d\n", width ,height, depth);
+  for(int x2 = x; x2 < width; x2++){
+    for(int y2 = y; y2 < height; y2++){
+      for(int z2 = z; z2 < depth; z2++){
+	if(rand() % 100 < density){
+	  int r = (rand() % radius) + 1;
+
+	  if(spiked){
+	    for(int i = 0; i < 5; i++){
+	      add_line(e,
+		       x2, y2, z2,
+		       x2 + (rand() % (2 * r)) - r, y2 + (rand() % (2 * r)) - r, z2 + (rand() % (2 * r)) - r);
+	    }
+	  }else{
+	    add_line(e, x2, y2, z2, x2, y2, z2);
+	  }
+	}
+      }
+    }
+  }
+}
+
 void scale(MATRIX * m, double x, double y, double z){
   MATRIX *t = generate_matrix(4, 4);
   ident(t);
