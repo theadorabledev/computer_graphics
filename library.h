@@ -56,6 +56,7 @@ void add_element(ELEMENT * list, ELEMENT * e);
 void add_child(ELEMENT * parent, ELEMENT * child);
 void plot_element(ELEMENT * e, GRID * g);
 
+void set_color(ELEMENT * e, int color);
 
 MATRIX * generate_matrix(int rows, int cols);
 void free_matrix(MATRIX * m);

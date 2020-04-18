@@ -31,6 +31,8 @@ void plot(GRID * grid, int x, int y, double z, int rgb){
   //printf("-->(%d %d %f, %f) \n", x, y, z, grid->z_buffer[grid->height - 1 - y][x]);
 }
 int rgb(int r, int g, int b){
+  if(r < 0)
+    return r;
   return((r&0x0ff)<<16)|((g&0x0ff)<<8)|(b&0x0ff);
 }
 double distance(int x1, int y1, int x2, int y2){
@@ -224,6 +226,9 @@ void add_child(ELEMENT * parent, ELEMENT * child){
     parent->children = child;
 }
 
+void set_color(ELEMENT * e, int color){
+  e->color = color;
+}
 void draw_scanline(GRID * g, int x1, int x2, int y, double z1, double z2, int color){
   double dz = (z2 - z1) / (x2 - x1);
   if(x1 > x2)
@@ -235,7 +240,7 @@ void draw_scanline(GRID * g, int x1, int x2, int y, double z1, double z2, int co
   }
 }
 
-void draw_triangle(ELEMENT * e, GRID * g, int c){
+void draw_triangle(ELEMENT * e, GRID * g, int c, int color){
   MATRIX * m = e->triangle_matrix;
   //Find the top bottom and middle of the triangle
   int top = c, mid = c + 1, bot = c + 2;
@@ -285,7 +290,7 @@ void draw_triangle(ELEMENT * e, GRID * g, int c){
 
   }
   while(y < y_mid){
-    draw_scanline(g, (int) x1, (int) x2, y, z1, z2, e->color);
+    draw_scanline(g, (int) x1, (int) x2, y, z1, z2, color);
     x1 += dx_0;
     x2 += dx_1;
     z1 += dz_0;
@@ -293,7 +298,7 @@ void draw_triangle(ELEMENT * e, GRID * g, int c){
     y += 1;
   }
   while(y <= y_top){
-    draw_scanline(g, (int) x1, (int) x2, y, z1, z2, e->color);
+    draw_scanline(g, (int) x1, (int) x2, y, z1, z2, color);
     x1 += dx_0;
     x2 += dx_2;
     z1 += dz_0;
@@ -306,27 +311,32 @@ void plot_element(ELEMENT * e, GRID * g){
   if(!e)
     return;
   MATRIX *m = e->edge_matrix;
+  int color = e->color;// -1 => wireframe, -2 = random
+  if(e->color == -2)
+    color = rgb(rand() % 256, rand() % 256, rand() % 256);
+  //printf("%d\n" color);
   for(int c = 0; c < m->columns; c += 2){
     draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
 	      (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
-	      e->color);
+	      color);
   }
   m = e->triangle_matrix;
   for(int c = 0; c < e->triangle_length; c += 3){
     VECTOR n = calculate_normal(m, c);
-    //if(dot_product(viewpoint, n) >= 0){
     if(1){
-      e->color = rgb(rand() % 256, rand() % 256, rand() % 256);
-      draw_triangle(e, g, c);
-      draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
-	      (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
-	      e->color);
-      draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
-	      (int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
-	      e->color);
-      draw_line(g, (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
-		(int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
-		e->color);
+        if(e->color == -2)
+	  color = rgb(rand() % 256, rand() % 256, rand() % 256);
+	if(color != -1)
+	  draw_triangle(e, g, c, color);
+	draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
+		  (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
+		  color);
+	draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
+		  (int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
+		  color);
+	draw_line(g, (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
+		  (int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
+		  color);
     }
     free(n);
   }
@@ -458,7 +468,6 @@ void speckle(ELEMENT * e, int x, int y, int z, int width, int height, int depth,
   }
 }
 void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,  int length, int tendrils, int bud){
-
   //Contains the information for each tendril: last_x, last_y, last_z, x, y, z, theta, phi
   double data[8 * tendrils];
   //Fill the tendrils with default information
