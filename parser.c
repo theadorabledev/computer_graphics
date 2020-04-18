@@ -3,8 +3,8 @@
 void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
-  enum command{Comment, Display, Push, Pop, Line, Circle, Bezier, Hermite, Speckle, Box, Sphere, Torus, Scale, Move, Rotate, Save};
-  char * commands[] = {"comment", "display", "push", "pop", "line", "circle", "bezier", "hermite", "speckle", "box", "sphere", "torus", "scale", "move", "rotate", "save"};
+  enum command{Comment, Display, Push, Pop, Line, Circle, Bezier, Hermite, Speckle, Flower, Box, Sphere, Torus, Scale, Move, Rotate, Save};
+  char * commands[] = {"comment", "display", "push", "pop", "line", "circle", "bezier", "hermite", "speckle", "flower", "box", "sphere", "torus", "scale", "move", "rotate", "save"};
   FILE *f;
   char line[256];
   clear_grid(s);
@@ -16,7 +16,7 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   while(fgets(line, 255, f) != NULL) {
     if(c == -1){
       line[strlen(line)-1]='\0';
-      for(int k = 0; k < 16; k++)
+      for(int k = 0; k < 17; k++)
 	if(!strcmp(line, commands[k]) || (k == 0 && line[0] == '#'))
 	  c = k;
       if(c < 4){
@@ -75,6 +75,10 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	  }
 	  case Speckle:
 	    speckle(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]), atoi(a[6]), atoi(a[7]), atoi(a[8]));
+	    break;
+	  case Flower:
+	    flower(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]), atoi(a[6]), atoi(a[7]), atoi(a[8]));
+
 	    break;
 	  case Box:
 	    box(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]));

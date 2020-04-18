@@ -6,6 +6,10 @@
 #include <float.h>
 
 #define SWAP(a,b,type) {type ttttttttt=a;a=b;b=ttttttttt;}
+#define PRINT_ARRAY(array, length){		\
+    for(int flub = 0; flub < length; flub++)	\
+      printf("%f\t", *(array + flub));		\
+    printf("\n");}
 
 typedef struct Matrix MATRIX;
 typedef struct Matrix{
@@ -67,7 +71,8 @@ MATRIX * pop_from_stack(MATRIX * m);
 void transform_stack(MATRIX * m, MATRIX * t);
 
 void speckle(ELEMENT * e, int x, int y, int z, int width, int height, int depth, int density , int radius, int spiked);
-
+void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,  int length, int tendrils, int bud);
+  
 void scale(MATRIX * m, double x, double y, double z);
 void project(MATRIX * m, double d);
 void translate(MATRIX *m, double x, double y, double z);

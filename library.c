@@ -36,9 +36,17 @@ int rgb(int r, int g, int b){
 double distance(int x1, int y1, int x2, int y2){
   return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
 }
+double degrees_to_radians(int degrees){
+  return (M_PI * degrees) / 180.0;
+}
 void get_point_polar(int x, int y, double theta, double r, int *xn, int *yn){
   *xn = x + (r * cos(theta));
   *yn = y + (r * sin(theta));
+}
+void get_point_polar_3d(double *in_buf, double theta, double phi, double r, double *buf){
+  *buf = *in_buf + (r * sin(phi) * cos(theta));
+  *(buf + 1) = *(in_buf + 1) + (r * sin(phi) * sin(theta));
+  *(buf + 2) = *(in_buf + 2) + (r * cos(phi));
 }
 int write_image(GRID * grid, char * filename){
   FILE * fp;
@@ -123,8 +131,9 @@ void draw_line_gentle(GRID * grid, int x1, int y1, double z1, int x2, int y2, do
   }
 }
 void draw_line(GRID * grid, int x1, int y1, double z1, int x2, int y2, double z2, int rgb){
-  //printf("%-4d %-4d - %-4d %-4d \n", x1, y1, x2, y2);
+  //printf("jhhhhhh %-4d %-4d - %-4d %-4d", x1, y1, x2, y2);
   double slope = (x2 - x1) ? ((y2 - y1) * 1.0 / (x2 - x1)) : INT_MAX;
+  //printf(" - %f\n", slope);
   if(fabs(slope) <= 1.0){
     draw_line_gentle(grid, x1, y1, z1, x2, y2, z2, rgb);
   }else if(slope == INT_MAX){
@@ -194,6 +203,7 @@ void copy_last_col(ELEMENT * e){
   add_col(e, m[0][l], m[1][l], m[2][l], 0);
 }
 void add_line(ELEMENT * e, int x, int y, int z, int x2, int y2, int z2){
+  //printf("(%d %d %d %d %d %d)\n", x, y, z, x2, y2, z2);
   add_col(e, x, y, z, 0);
   add_col(e, x2, y2, z2, 0);
 }
@@ -304,8 +314,8 @@ void plot_element(ELEMENT * e, GRID * g){
   m = e->triangle_matrix;
   for(int c = 0; c < e->triangle_length; c += 3){
     VECTOR n = calculate_normal(m, c);
-    if(dot_product(viewpoint, n) >= 0){
-
+    //if(dot_product(viewpoint, n) >= 0){
+    if(1){
       e->color = rgb(rand() % 256, rand() % 256, rand() % 256);
       draw_triangle(e, g, c);
       draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
@@ -428,14 +438,11 @@ void speckle(ELEMENT * e, int x, int y, int z, int width, int height, int depth,
   height += y;
   depth += z;
   radius += 1;
-  printf("%d %d %d\n", x ,y, z);
-  printf("%d %d %d\n", width ,height, depth);
   for(int x2 = x; x2 < width; x2++){
     for(int y2 = y; y2 < height; y2++){
       for(int z2 = z; z2 < depth; z2++){
 	if(rand() % 100 < density){
 	  int r = (rand() % radius) + 1;
-
 	  if(spiked){
 	    for(int i = 0; i < 5; i++){
 	      add_line(e,
@@ -446,6 +453,68 @@ void speckle(ELEMENT * e, int x, int y, int z, int width, int height, int depth,
 	    add_line(e, x2, y2, z2, x2, y2, z2);
 	  }
 	}
+      }
+    }
+  }
+}
+void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,  int length, int tendrils, int bud){
+
+  //Contains the information for each tendril: last_x, last_y, last_z, x, y, z, theta, phi
+  double data[8 * tendrils];
+  //Fill the tendrils with default information
+  double template[] = {x, y, z, x, y, z, degrees_to_radians(theta), degrees_to_radians(phi)};
+  for(int i = 0; i < (8 * tendrils); i += 8){
+    memcpy(data + i, template, 8 * sizeof(double));
+  }
+  //Loop through the tendrils 'length' times, growing the stalks
+  for(int i = 0; i < 2 * length; i++){
+    for(int t = 0; t < 8 * tendrils; t += 8){
+      for(int p = t; p < t + 3; p ++){
+  	data[p] = data[p + 3];
+      }
+      data[t + 6] += degrees_to_radians((rand() % (2 * variance)) - variance);
+      data[t + 7] += degrees_to_radians((rand() % (2 * variance)) - variance);
+      get_point_polar_3d(data + t, *(data + t + 6), *(data + t + 7), 2, data + t + 3);
+      add_line(e,
+  	       (int) data[t + 0], (int) data[t + 1], (int) data[t + 2],
+  	       (int) data[t + 3], (int) data[t + 4], (int) data[t + 5]);
+    }
+  }
+  if(bud){
+    for(int t = 0; t < 8 * tendrils; t += 8){
+      double buf[3];
+      int petals = (rand() % 10) + 3;
+      double inc = 2 * M_PI / petals;
+      for(int i = 0; i <= petals; i ++){
+	//This was harder than I thought it would be
+	//https://math.stackexchange.com/questions/643130/circle-on-sphere
+	double a = M_PI / 4;
+	double b = data[t + 6];
+	double c = data[t + 7];
+	int r = 20;
+	add_triangle(e,
+		     data[t + 3], data[t + 4], data[t + 5],
+
+		     data[t + 3] + r * (
+					(sin(a) * cos(b) * cos(c) * cos(inc * i)) -
+					(sin(a) * sin(c) * sin(inc * i)) +
+					(cos(a) * sin(b) * cos(c))),
+		     data[t + 4] + r * (
+					(sin(a) * cos(b) * sin(c) * cos(inc * i)) +
+					(sin(a) * cos(c) * sin(inc * i)) +
+					(cos(a) * sin(b) * sin(c))),
+		     data[t + 5] + r * (
+					(sin(a) * sin(b) * cos(inc * i)) +
+					(cos(a) * cos(b))),
+
+		     data[t + 3] + r * ((sin(a) * cos(b) * cos(c) * cos(inc * (i + 1))) -
+					(sin(a) * sin(c) * sin(inc * (i + 1))) +
+					(cos(a) * sin(b) * cos(c))),
+		     data[t + 4] + r * ((sin(a) * cos(b) * sin(c) * cos(inc * (i + 1))) +
+					(sin(a) * cos(c) * sin(inc * (i + 1))) +
+					(cos(a) * sin(b) * sin(c))),
+		     data[t + 5] + r * ((sin(a) * sin(b) * cos(inc * (i + 1))) +
+					(cos(a) * cos(b))));
       }
     }
   }
