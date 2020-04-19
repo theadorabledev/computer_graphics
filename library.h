@@ -71,6 +71,7 @@ MATRIX * push_to_stack(MATRIX * m);
 MATRIX * pop_from_stack(MATRIX * m);
 void transform_stack(MATRIX * m, MATRIX * t);
 
+void cone(ELEMENT * e, int x, int y, int z, int res, double theta, double phi, double inner_angle, int radius, int closed){
 void speckle(ELEMENT * e, int x, int y, int z, int width, int height, int depth, int density , int radius, int spiked);
 void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,  int length, int tendrils, int bud);
   

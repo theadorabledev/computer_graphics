@@ -41,6 +41,9 @@ double distance(int x1, int y1, int x2, int y2){
 double degrees_to_radians(int degrees){
   return (M_PI * degrees) / 180.0;
 }
+int radians_to_degrees(double radians){
+  return (int) (180 * radians / M_PI);
+}
 void get_point_polar(int x, int y, double theta, double r, int *xn, int *yn){
   *xn = x + (r * cos(theta));
   *yn = y + (r * sin(theta));
@@ -280,10 +283,10 @@ void draw_triangle(ELEMENT * e, GRID * g, int c, int color){
   double dz_1 = (m->data[2][mid] - m->data[2][bot]) / (y_mid - y);
   double dz_2 = (m->data[2][top] - m->data[2][mid]) / (y_top - y_mid);
   /* printf("%d -- (%d %d %d) (%d %d %d) (%d %d %d) \n", c, */
-  /* 	 (int) m->data[0][top], (int) m->data[1][top], (int) m->data[2][top], */
-  /* 	 (int) m->data[0][mid], (int) m->data[1][mid], (int) m->data[2][mid], */
-  /* 	 (int) m->data[0][bot], (int) m->data[1][bot], (int) m->data[2][bot] */
-  /* 	 ); */
+  /*	 (int) m->data[0][top], (int) m->data[1][top], (int) m->data[2][top], */
+  /*	 (int) m->data[0][mid], (int) m->data[1][mid], (int) m->data[2][mid], */
+  /*	 (int) m->data[0][bot], (int) m->data[1][bot], (int) m->data[2][bot] */
+  /*	 ); */
 
   if(!(y_top - y)){
     dx_0 = 0;
@@ -324,7 +327,7 @@ void plot_element(ELEMENT * e, GRID * g){
   for(int c = 0; c < e->triangle_length; c += 3){
     VECTOR n = calculate_normal(m, c);
     if(1){
-        if(e->color == -2)
+	if(e->color == -2)
 	  color = rgb(rand() % 256, rand() % 256, rand() % 256);
 	if(color != -1)
 	  draw_triangle(e, g, c, color);
@@ -443,6 +446,45 @@ void transform_stack(MATRIX * m, MATRIX * t){
   //free(t);
 }
 
+void cone(ELEMENT * e, int x, int y, int z, int res, double theta, double phi, double inner_angle, int radius, int closed){
+  //This was harder than I thought it would be
+  //https://math.stackexchange.com/questions/643130/circle-on-sphere
+  double t = degrees_to_radians(theta);
+  double p = degrees_to_radians(phi);
+  double a = degrees_to_radians(inner_angle);
+  double origin[] = {(double) x, (double) y, (double) z};
+  double midpoint[3]; //Center of the base of the cone
+  get_point_polar_3d(origin, theta, phi, radius * cos(inner_angle / 2), midpoint);
+  double inc = 2 * M_PI / res;
+  for(int i = 0; i < res; i++){
+    int x1 = x + radius * ((sin(inner_angle) * cos(theta) * cos(phi) * cos(inc * i)) -
+			   (sin(inner_angle) * sin(phi) * sin(inc * i)) +
+			   (cos(inner_angle) * sin(theta) * cos(phi)));
+    int y1 = y + radius * ((sin(inner_angle) * cos(theta) * sin(phi) * cos(inc * i)) +
+			   (sin(inner_angle) * cos(phi) * sin(inc * i)) +
+			   (cos(inner_angle) * sin(theta) * sin(phi)));
+    int z1 = z + radius * ((sin(inner_angle) * sin(theta) * cos(inc * i)) +
+			   (cos(inner_angle) * cos(theta)));
+    int x2 = x + radius * ((sin(inner_angle) * cos(theta) * cos(phi) * cos(inc * (i + 1))) -
+			   (sin(inner_angle) * sin(phi) * sin(inc * (i + 1))) +
+			   (cos(inner_angle) * sin(theta) * cos(phi)));
+    int y2 = y + radius * ((sin(inner_angle) * cos(theta) * sin(phi) * cos(inc * (i + 1))) +
+			       (sin(inner_angle) * cos(phi) * sin(inc * (i + 1))) +
+			   (cos(inner_angle) * sin(theta) * sin(phi)));
+    int z2 = z + radius * ((sin(inner_angle) * sin(theta) * cos(inc * (i + 1))) +
+			   (cos(inner_angle) * cos(theta)));
+    add_triangle(e,
+		 x, y, z,
+		 x1, y1, z1,
+		 x2, y2, z2);
+    if(1){
+      add_triangle(e,
+		   (int) midpoint[0], (int) midpoint[1], (int) midpoint[2],
+		   x1, y1, z1,
+		   x2, y2, z2);
+    }
+  }
+}
 void speckle(ELEMENT * e, int x, int y, int z, int width, int height, int depth, int density , int radius, int spiked){
   width += x;
   height += y;
@@ -467,7 +509,7 @@ void speckle(ELEMENT * e, int x, int y, int z, int width, int height, int depth,
     }
   }
 }
-void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,  int length, int tendrils, int bud){
+void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,	 int length, int tendrils, int bud){
   //Contains the information for each tendril: last_x, last_y, last_z, x, y, z, theta, phi
   double data[8 * tendrils];
   //Fill the tendrils with default information
@@ -479,14 +521,14 @@ void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance, 
   for(int i = 0; i < 2 * length; i++){
     for(int t = 0; t < 8 * tendrils; t += 8){
       for(int p = t; p < t + 3; p ++){
-  	data[p] = data[p + 3];
+	data[p] = data[p + 3];
       }
       data[t + 6] += degrees_to_radians((rand() % (2 * variance)) - variance);
       data[t + 7] += degrees_to_radians((rand() % (2 * variance)) - variance);
       get_point_polar_3d(data + t, *(data + t + 6), *(data + t + 7), 2, data + t + 3);
       add_line(e,
-  	       (int) data[t + 0], (int) data[t + 1], (int) data[t + 2],
-  	       (int) data[t + 3], (int) data[t + 4], (int) data[t + 5]);
+	       (int) data[t + 0], (int) data[t + 1], (int) data[t + 2],
+	       (int) data[t + 3], (int) data[t + 4], (int) data[t + 5]);
     }
   }
   if(bud){
@@ -494,40 +536,11 @@ void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance, 
       double buf[3];
       int petals = (rand() % 10) + 3;
       double inc = 2 * M_PI / petals;
-      for(int i = 0; i <= petals; i ++){
-	//This was harder than I thought it would be
-	//https://math.stackexchange.com/questions/643130/circle-on-sphere
-	double a = M_PI / 4;
-	double b = data[t + 6];
-	double c = data[t + 7];
-	int r = 20;
-	add_triangle(e,
-		     data[t + 3], data[t + 4], data[t + 5],
-
-		     data[t + 3] + r * (
-					(sin(a) * cos(b) * cos(c) * cos(inc * i)) -
-					(sin(a) * sin(c) * sin(inc * i)) +
-					(cos(a) * sin(b) * cos(c))),
-		     data[t + 4] + r * (
-					(sin(a) * cos(b) * sin(c) * cos(inc * i)) +
-					(sin(a) * cos(c) * sin(inc * i)) +
-					(cos(a) * sin(b) * sin(c))),
-		     data[t + 5] + r * (
-					(sin(a) * sin(b) * cos(inc * i)) +
-					(cos(a) * cos(b))),
-
-		     data[t + 3] + r * ((sin(a) * cos(b) * cos(c) * cos(inc * (i + 1))) -
-					(sin(a) * sin(c) * sin(inc * (i + 1))) +
-					(cos(a) * sin(b) * cos(c))),
-		     data[t + 4] + r * ((sin(a) * cos(b) * sin(c) * cos(inc * (i + 1))) +
-					(sin(a) * cos(c) * sin(inc * (i + 1))) +
-					(cos(a) * sin(b) * sin(c))),
-		     data[t + 5] + r * ((sin(a) * sin(b) * cos(inc * (i + 1))) +
-					(cos(a) * cos(b))));
-      }
+	cone(e, (int)data[t + 3], (int)data[t + 4], (int)data[t + 5], petals,  data[t + 6], data[t + 7], M_PI / 4, 20, 0);
     }
   }
 }
+
 
 void scale(MATRIX * m, double x, double y, double z){
   MATRIX *t = generate_matrix(4, 4);
