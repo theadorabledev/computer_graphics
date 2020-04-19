@@ -446,43 +446,36 @@ void transform_stack(MATRIX * m, MATRIX * t){
   //free(t);
 }
 
-void cone(ELEMENT * e, int x, int y, int z, int res, double theta, double phi, double inner_angle, int radius, int closed){
-  //This was harder than I thought it would be
-  //https://math.stackexchange.com/questions/643130/circle-on-sphere
-  double t = degrees_to_radians(theta);
-  double p = degrees_to_radians(phi);
-  double a = degrees_to_radians(inner_angle);
+double * generate_cone(int x, int y, int z, int res, double theta, double phi, double inner_angle, int radius){
+  // returns  data in format{origin_x, origin_y, origin, z, center_x, center_y, center_z, x1, y1, z1, ..., xn, yn, zn
+  double * data = malloc(sizeof(double) * 3 * (res + 3));
   double origin[] = {(double) x, (double) y, (double) z};
   double midpoint[3]; //Center of the base of the cone
   get_point_polar_3d(origin, theta, phi, radius * cos(inner_angle / 2), midpoint);
+  memcpy(data, origin, 3 * sizeof(double));
+  memcpy(data + 3, midpoint, 3 * sizeof(double));
   double inc = 2 * M_PI / res;
-  for(int i = 0; i < res; i++){
-    int x1 = x + radius * ((sin(inner_angle) * cos(theta) * cos(phi) * cos(inc * i)) -
+  for(int i = 0; i <= res; i++){
+
+    double x1 = x + radius * ((sin(inner_angle) * cos(theta) * cos(phi) * cos(inc * i)) -
 			   (sin(inner_angle) * sin(phi) * sin(inc * i)) +
 			   (cos(inner_angle) * sin(theta) * cos(phi)));
-    int y1 = y + radius * ((sin(inner_angle) * cos(theta) * sin(phi) * cos(inc * i)) +
+    double y1 = y + radius * ((sin(inner_angle) * cos(theta) * sin(phi) * cos(inc * i)) +
 			   (sin(inner_angle) * cos(phi) * sin(inc * i)) +
 			   (cos(inner_angle) * sin(theta) * sin(phi)));
-    int z1 = z + radius * ((sin(inner_angle) * sin(theta) * cos(inc * i)) +
+    double z1 = z + radius * ((sin(inner_angle) * sin(theta) * cos(inc * i)) +
 			   (cos(inner_angle) * cos(theta)));
-    int x2 = x + radius * ((sin(inner_angle) * cos(theta) * cos(phi) * cos(inc * (i + 1))) -
-			   (sin(inner_angle) * sin(phi) * sin(inc * (i + 1))) +
-			   (cos(inner_angle) * sin(theta) * cos(phi)));
-    int y2 = y + radius * ((sin(inner_angle) * cos(theta) * sin(phi) * cos(inc * (i + 1))) +
-			       (sin(inner_angle) * cos(phi) * sin(inc * (i + 1))) +
-			   (cos(inner_angle) * sin(theta) * sin(phi)));
-    int z2 = z + radius * ((sin(inner_angle) * sin(theta) * cos(inc * (i + 1))) +
-			   (cos(inner_angle) * cos(theta)));
-    add_triangle(e,
-		 x, y, z,
-		 x1, y1, z1,
-		 x2, y2, z2);
-    if(1){
-      add_triangle(e,
-		   (int) midpoint[0], (int) midpoint[1], (int) midpoint[2],
-		   x1, y1, z1,
-		   x2, y2, z2);
-    }
+    double temp[] = {x1, y1, z1};
+    memcpy(data + ((i + 2) * 3), temp, 3 * sizeof(double));
+  }
+  return data;
+}
+void cone(ELEMENT * e, int x, int y, int z, int res, double theta, double phi, double inner_angle, int radius, int closed){
+  double * data = generate_cone(x, y, z, res, theta, phi, inner_angle, radius);
+  for(int i = 6; i < (res + 2) * 3; i += 3){
+    add_triangle(e, (int) data[0], (int) data[1], (int) data[2],
+		 (int) data[i], (int) data[i + 1], (int) data[i + 2],
+		 (int) data[i + 3], (int) data[i + 4], (int) data[i + 5]);
   }
 }
 void speckle(ELEMENT * e, int x, int y, int z, int width, int height, int depth, int density , int radius, int spiked){
