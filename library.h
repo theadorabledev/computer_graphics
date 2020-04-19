@@ -46,7 +46,8 @@ void draw_line_polar(GRID * grid, int x1, int y1, double r, double theta, int rg
 int rgb(int r, int g, int b);
 void get_point_polar(int x, int y, double theta, double r, int *xn, int *yn);
 double distance(int x1, int y1, int x2, int y2);
-
+double degrees_to_radians(int degrees);
+int radians_to_degrees(double radians);
 
 #define M_PI 3.14159265358979323846
 
@@ -70,8 +71,7 @@ void multiply(MATRIX * a, MATRIX * b);
 MATRIX * push_to_stack(MATRIX * m);
 MATRIX * pop_from_stack(MATRIX * m);
 void transform_stack(MATRIX * m, MATRIX * t);
-
-void cone(ELEMENT * e, int x, int y, int z, int res, double theta, double phi, double inner_angle, int radius, int closed);
+void cone(ELEMENT * e, int x, int y, int z, double theta, double phi, double inner_angle, int radius, int res, int closed);
 void speckle(ELEMENT * e, int x, int y, int z, int width, int height, int depth, int density , int radius, int spiked);
 void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,  int length, int tendrils, int bud);
   
