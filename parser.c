@@ -3,8 +3,8 @@
 void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
-  enum command{Comment, Display, Push, Pop, Color, Line, Circle, Bezier, Hermite, Speckle, Flower, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save};
-  char * commands[] = {"comment", "display", "push", "pop", "color", "line", "circle", "bezier", "hermite", "speckle", "flower", "box", "sphere", "torus", "Cone", "scale", "move", "rotate", "save"};
+  enum command{Comment, Display, Push, Pop, Color, Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save};
+  char * commands[] = {"comment", "display", "push", "pop", "color", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save"};
   FILE *f;
   char line[256];
   clear_grid(s);
@@ -85,6 +85,10 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	  case Flower:
 	    flower(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]), atoi(a[6]), atoi(a[7]), atoi(a[8]));
 	    break;
+	  case Tendril:
+	    //void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance, int length, int radius){
+	    tendril(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]), atoi(a[6]), atoi(a[7]), atoi(a[8]));
+	    break;
 	  case Box:
 	    box(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]));
 	    break;
@@ -95,7 +99,8 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	    torus(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]), atoi(a[4]));	    
 	    break;
 	  case Cone:
-	    cone(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]), atoi(a[6]), atoi(a[7]), atoi(a[8]));
+	    cone(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  degrees_to_radians(atoi(a[3])),  degrees_to_radians(atoi(a[4])),  degrees_to_radians(atoi(a[5])), atoi(a[6]), atoi(a[7]), atoi(a[8]));
+	    break;
 	  case Scale:
 	    scale(transform, atoi(a[0]), atoi(a[1]), atoi(a[2]));
 	    transform_stack(stack, transform);
