@@ -64,6 +64,7 @@ int write_image(GRID * grid, char * filename){
     fprintf(fp, "\n");
   }
   fclose(fp);
+  return 0;
 }
 void clear_grid(GRID * grid){
   for(int y = 0; y < grid->height; y++)
@@ -99,6 +100,7 @@ void draw_line_steep(GRID * grid, int x1, int y1, double z1, int x2, int y2, dou
 }
 void draw_line_vertical(GRID * grid, int x1, int y1, double z1, int x2, int y2, double z2, int rgb){
   if(y2 < y1){
+    SWAP(x1, x2, int);
     SWAP(y1, y2, int);
     SWAP(z1, z2, double);
   }
@@ -136,9 +138,7 @@ void draw_line_gentle(GRID * grid, int x1, int y1, double z1, int x2, int y2, do
   }
 }
 void draw_line(GRID * grid, int x1, int y1, double z1, int x2, int y2, double z2, int rgb){
-  //printf("jhhhhhh %-4d %-4d - %-4d %-4d", x1, y1, x2, y2);
   double slope = (x2 - x1) ? ((y2 - y1) * 1.0 / (x2 - x1)) : INT_MAX;
-  //printf(" - %f\n", slope);
   if(fabs(slope) <= 1.0){
     draw_line_gentle(grid, x1, y1, z1, x2, y2, z2, rgb);
   }else if(slope == INT_MAX){
@@ -198,7 +198,6 @@ void add_col(ELEMENT  * e, int x, int y, int z, int polygon){
   m[2][l] = z;
   m[3][l] = 1;
   int t = polygon ? (e->triangle_length += 1) : (e->length += 1);
-  int nl = (M->columns * 3)/2;
   if(l + 1 == M->columns)
     grow_matrix(M, (M->columns * 3)/2);
 }
@@ -216,6 +215,13 @@ void add_triangle(ELEMENT * e, int x, int y, int z, int x2, int y2, int z2, int 
   add_col(e, x, y, z, 1);
   add_col(e, x2, y2, z2, 1);
   add_col(e, x3, y3, z3, 1);
+}
+void add_quadrilateral(ELEMENT * e, int x, int y, int z, int x2, int y2, int z2, int x3, int y3, int z3, int x4, int y4, int z4){
+  // 2   1
+  // |   |
+  // 3 - 4
+  add_triangle(e, x, y, z, x2, y2, z2, x3, y3, z3);
+  add_triangle(e, x3, y3, z3, x4, y4, z4, x, y, z);
 }
 void add_element(ELEMENT * list, ELEMENT * e){
   while(list->next_element)
@@ -326,20 +332,23 @@ void plot_element(ELEMENT * e, GRID * g){
   m = e->triangle_matrix;
   for(int c = 0; c < e->triangle_length; c += 3){
     VECTOR n = calculate_normal(m, c);
+    //if(dot_product(viewpoint, n) >= 0){
     if(1){
-	if(e->color == -2)
-	  color = rgb(rand() % 256, rand() % 256, rand() % 256);
-	if(color != -1)
-	  draw_triangle(e, g, c, color);
-	draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
-		  (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
-		  color);
-	draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
-		  (int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
-		  color);
-	draw_line(g, (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
-		  (int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
-		  color);
+      if(e->color == -2)
+	color = rgb(rand() % 256, rand() % 256, rand() % 256);
+      if(e->color != -1)
+	draw_triangle(e, g, c, color);
+      else
+	color = rgb(0, 0, 0);
+      draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
+		(int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
+		color);
+      draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
+		(int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
+		color);
+      draw_line(g, (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
+		(int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
+		color);
     }
     free(n);
   }
@@ -355,7 +364,7 @@ MATRIX * generate_matrix(int rows, int cols){
   tmp = (double **)calloc(rows * sizeof(double *), 1);
   for (i=0;i<rows;i++) {
     tmp[i]=(double *)calloc(cols * sizeof(double), 1);
-    }
+  }
   m=(MATRIX *)calloc(sizeof(MATRIX), 1);
   m->data=tmp;
   m->rows = rows;
@@ -418,9 +427,6 @@ void multiply(MATRIX * a, MATRIX * b){
   b->data = t->data;
   free(t);
 }
-void multiple(MATRIX * a, MATRIX * b){
-
-}
 void ident(MATRIX * m){
   for(int r = 0; r < m->columns; r++){
     for(int c = 0; c < m->columns; c++){
@@ -446,7 +452,9 @@ void transform_stack(MATRIX * m, MATRIX * t){
   //free(t);
 }
 
-double * generate_cone(int x, int y, int z, int res, double theta, double phi, double inner_angle, int radius){
+double * generate_cone(int x, int y, int z, double theta, double phi, double inner_angle, int radius, int res){
+  //https://math.stackexchange.com/questions/643130/circle-on-sphere
+  // radius is the length on the surface on the cone
   // returns  data in format{origin_x, origin_y, origin, z, center_x, center_y, center_z, x1, y1, z1, ..., xn, yn, zn
   double * data = malloc(sizeof(double) * 3 * (res + 3));
   double origin[] = {(double) x, (double) y, (double) z};
@@ -456,27 +464,32 @@ double * generate_cone(int x, int y, int z, int res, double theta, double phi, d
   memcpy(data + 3, midpoint, 3 * sizeof(double));
   double inc = 2 * M_PI / res;
   for(int i = 0; i <= res; i++){
-
     double x1 = x + radius * ((sin(inner_angle) * cos(theta) * cos(phi) * cos(inc * i)) -
-			   (sin(inner_angle) * sin(phi) * sin(inc * i)) +
-			   (cos(inner_angle) * sin(theta) * cos(phi)));
+			      (sin(inner_angle) * sin(phi) * sin(inc * i)) +
+			      (cos(inner_angle) * sin(theta) * cos(phi)));
     double y1 = y + radius * ((sin(inner_angle) * cos(theta) * sin(phi) * cos(inc * i)) +
-			   (sin(inner_angle) * cos(phi) * sin(inc * i)) +
-			   (cos(inner_angle) * sin(theta) * sin(phi)));
+			      (sin(inner_angle) * cos(phi) * sin(inc * i)) +
+			      (cos(inner_angle) * sin(theta) * sin(phi)));
     double z1 = z + radius * ((sin(inner_angle) * sin(theta) * cos(inc * i)) +
-			   (cos(inner_angle) * cos(theta)));
+			      (cos(inner_angle) * cos(theta)));
     double temp[] = {x1, y1, z1};
     memcpy(data + ((i + 2) * 3), temp, 3 * sizeof(double));
   }
   return data;
 }
-void cone(ELEMENT * e, int x, int y, int z, int res, double theta, double phi, double inner_angle, int radius, int closed){
-  double * data = generate_cone(x, y, z, res, theta, phi, inner_angle, radius);
+void cone(ELEMENT * e, int x, int y, int z, double theta, double phi, double inner_angle, int radius, int res, int closed){
+  double * data = generate_cone(x, y, z, theta, phi, inner_angle, radius, res);
   for(int i = 6; i < (res + 2) * 3; i += 3){
     add_triangle(e, (int) data[0], (int) data[1], (int) data[2],
 		 (int) data[i], (int) data[i + 1], (int) data[i + 2],
 		 (int) data[i + 3], (int) data[i + 4], (int) data[i + 5]);
+    if(closed){
+      add_triangle(e, (int) data[3], (int) data[4], (int) data[5],
+		   (int) data[i], (int) data[i + 1], (int) data[i + 2],
+		   (int) data[i + 3], (int) data[i + 4], (int) data[i + 5]);
+    }
   }
+  free(data);
 }
 void speckle(ELEMENT * e, int x, int y, int z, int width, int height, int depth, int density , int radius, int spiked){
   width += x;
@@ -526,10 +539,8 @@ void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,	
   }
   if(bud){
     for(int t = 0; t < 8 * tendrils; t += 8){
-      double buf[3];
       int petals = (rand() % 10) + 3;
-      double inc = 2 * M_PI / petals;
-	cone(e, (int)data[t + 3], (int)data[t + 4], (int)data[t + 5], petals,  data[t + 6], data[t + 7], M_PI / 4, 20, 0);
+      cone(e, (int)data[t + 3], (int)data[t + 4], (int)data[t + 5], data[t + 6], data[t + 7], M_PI / 4, 20, petals, 0);
     }
   }
 }
@@ -731,10 +742,9 @@ void box(ELEMENT * e, double x, double y, double z, double width, double height,
   t(2, 1, 5, 6);
   t(1, 0, 4, 5);
   t(7, 6, 5, 4);
-  #undef t
+#undef t
 }
-ELEMENT * generate_sphere(double x, double y, double z, double r){
-  int res = 20;
+ELEMENT * generate_sphere(double x, double y, double z, double r, int res){
   ELEMENT * e = generate_element(res * res + 1, rgb(255, 255, 255));
   double t_inc = M_PI / res;
   double p_inc = M_PI / (res - 1);
@@ -746,14 +756,14 @@ ELEMENT * generate_sphere(double x, double y, double z, double r){
 	      x + (r * cos(theta) * sin(phi)),
 	      y + (r * sin(theta) * sin(phi)),
 	      z + (r * cos(phi)), 0);
-      }
+    }
   }
   return e;
 }
 void sphere(ELEMENT * e, double x, double y, double z, double r){
-  ELEMENT * s = generate_sphere(x, y, z, r);
-  MATRIX * m = s->edge_matrix;
   int res = 20;
+  ELEMENT * s = generate_sphere(x, y, z, r, res);
+  MATRIX * m = s->edge_matrix;
   for(int i = 0; i < s->length; i++){
     int a = (i + 1);
     int t = (i + res) % (2 * res * res);
@@ -788,7 +798,7 @@ ELEMENT * generate_torus(double x, double y, double z, double R, double r){
 	      y + (r * sin(phi)),
 	      z - (sin(theta) * (r * cos(phi) + R)), 0);
 
-      }
+    }
   }
   return e;
 }
@@ -800,7 +810,7 @@ void torus(ELEMENT * e, double x, double y, double z, double r, double R){
     /* T - I
        | X |
        Q - A
-     */
+    */
     int a = i + 1;
     a = (a % (2 * res)) ? a : a - 2 * res;
     int t = (i + 2 * res) % s->length;
