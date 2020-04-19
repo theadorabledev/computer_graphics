@@ -544,7 +544,63 @@ void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,	
     }
   }
 }
+void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance, int length, int radius, int res){
+  //The different kinds of endings / tails these things can have
+  enum tendril_end{Sphere, Cone, Tapered_Cone};
+  int end = Cone;
+  int cone_radius = radius / sin(M_PI / 4);
+  double int_angle = M_PI / 4;
 
+  //Represent the direction of the face of each segment and the previous one: last_theta, last_phi, theta, phi
+  double angles[] = {degrees_to_radians(theta), degrees_to_radians(phi), degrees_to_radians(theta), degrees_to_radians(phi)};
+
+  // Hold the current segment and the last one
+  double * last_pos;
+  double *pos = generate_cone(x, y, z, angles[0], angles[1], int_angle, cone_radius, res);
+
+  // Close off the base of the tendril
+  for(int p = 6; p < (res + 2) * 3; p += 3){
+    add_triangle(e, pos[p], pos[p + 1], pos[p + 2],
+		 pos[p + 3], pos[p + 4], pos[p + 5],
+		 pos[3], pos[4], pos[5]);
+  }
+
+  //Grow the tendril
+  int complete = 0;
+  for(int i = 0; (i < length + res) && !complete; i++){
+    //free(last_pos);
+    last_pos = pos;
+    memcpy(angles, angles + 2, 2 * sizeof(double));
+    angles[2] += degrees_to_radians((rand() % (2 * variance)) - variance);
+    angles[3] += degrees_to_radians((rand() % (2 * variance)) - variance);
+    pos = generate_cone(pos[3], pos[4], pos[5], angles[2], angles[3], int_angle, cone_radius, res);
+    if(i > length - 1){
+      switch(end){
+	case Sphere:
+	  break;
+	case Cone:
+	  for(int p = 6; p < (res + 2) * 3; p += 3){
+	    add_triangle(e, last_pos[p], last_pos[p + 1], last_pos[p + 2],
+			 last_pos[p + 3], last_pos[p + 4], last_pos[p + 5],
+			 pos[3], pos[4], pos[3]);
+	  }
+	  complete = 1;
+	  break;
+	case Tapered_Cone:
+	  break;
+      }
+
+    }else{
+      //Use the two cones given as rings, create another segment of the tendril by joining them
+      for(int p = 6; p < (res + 2) * 3; p += 3){
+	add_quadrilateral(e, pos[p], pos[p + 1], pos[p + 2],
+			  pos[p + 3], pos[p + 4], pos[p + 5],
+			  last_pos[p + 3], last_pos[p + 4], last_pos[p + 5],
+			  last_pos[p], last_pos[p + 1], last_pos[p + 2]);
+      }
+    }
+  }
+}
 
 void scale(MATRIX * m, double x, double y, double z){
   MATRIX *t = generate_matrix(4, 4);
@@ -724,17 +780,17 @@ void clear(ELEMENT * e){
 void box(ELEMENT * e, double x, double y, double z, double width, double height, double depth){
   //Very bad C practice
   double points[8][4] = {
-		       {x, y, z}, {x, y - height, z}, {x + width, y - height, z}, {x + width, y, z},
-		       {x, y, z - depth}, {x, y - height, z - depth}, {x + width, y - height, z - depth}, {x + width, y, z - depth}};
+			 {x, y, z}, {x, y - height, z}, {x + width, y - height, z}, {x + width, y, z},
+			 {x, y, z - depth}, {x, y - height, z - depth}, {x + width, y - height, z - depth}, {x + width, y, z - depth}};
   #define t(p1, p2, p3, p4) ({						\
-      add_triangle(e,							\
-		   points[p1][0], points[p1][1], points[p1][2],		\
-		   points[p2][0], points[p2][1], points[p2][2],		\
-		   points[p3][0], points[p3][1], points[p3][2]);	\
-      add_triangle(e,							\
-		   points[p3][0], points[p3][1], points[p3][2],		\
-		   points[p4][0], points[p4][1], points[p4][2],		\
-		   points[p1][0], points[p1][1], points[p1][2]);})
+	add_triangle(e,							\
+		     points[p1][0], points[p1][1], points[p1][2],	\
+		     points[p2][0], points[p2][1], points[p2][2],	\
+		     points[p3][0], points[p3][1], points[p3][2]);	\
+	add_triangle(e,							\
+		     points[p3][0], points[p3][1], points[p3][2],	\
+		     points[p4][0], points[p4][1], points[p4][2],	\
+		     points[p1][0], points[p1][1], points[p1][2]);})
 
   t(0, 1, 2, 3);
   t(0, 3, 7, 4);
@@ -742,7 +798,7 @@ void box(ELEMENT * e, double x, double y, double z, double width, double height,
   t(2, 1, 5, 6);
   t(1, 0, 4, 5);
   t(7, 6, 5, 4);
-#undef t
+  #undef t
 }
 ELEMENT * generate_sphere(double x, double y, double z, double r, int res){
   ELEMENT * e = generate_element(res * res + 1, rgb(255, 255, 255));
