@@ -86,8 +86,8 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	    flower(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]), atoi(a[6]), atoi(a[7]), atoi(a[8]));
 	    break;
 	  case Tendril:
-	    //void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance, int length, int radius){
-	    tendril(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]), atoi(a[6]), atoi(a[7]), atoi(a[8]));
+	    //void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance, int length, int radius, int res);
+	    tendril(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]), atoi(a[6]), atoi(a[7]), atoi(a[8]), atoi(a[9]));
 	    break;
 	  case Box:
 	    box(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]));

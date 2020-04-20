@@ -24,7 +24,7 @@ void plot(GRID * grid, int x, int y, double z, int rgb){
   if (y < 0 || x < 0 || x >= grid->width || y >= grid->height)
     return;
   //printf("(%d %d %f, %f)", x, y, z, grid->z_buffer[grid->height - 1 - y][x]);
-  if(z > grid->z_buffer[grid->height - 1 - y][x]){
+  if(z >= grid->z_buffer[grid->height - 1 - y][x]){
     grid->z_buffer[grid->height - 1 - y][x] = z;
     grid->data[grid->height - 1 - y][x] = rgb;
   }
@@ -239,9 +239,10 @@ void set_color(ELEMENT * e, int color){
   e->color = color;
 }
 void draw_scanline(GRID * g, int x1, int x2, int y, double z1, double z2, int color){
-  double dz = (z2 - z1) / (x2 - x1);
+
   if(x1 > x2)
     SWAP(x1, x2, int);
+  double dz = (z2 - z1) / (x2 - x1);
   while(x1 < x2){
     plot(g, x1, y, z1, color);
     z1 += dz;
@@ -544,13 +545,12 @@ void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,	
     }
   }
 }
-void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance, int length, int radius, int res){
+void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance, int length, int radius, int end, int res){
   //The different kinds of endings / tails these things can have
   enum tendril_end{Sphere, Cone, Tapered_Cone};
-  int end = Cone;
   int cone_radius = radius / sin(M_PI / 4);
   double int_angle = M_PI / 4;
-
+  double int_angle_decrease = int_angle / res;
   //Represent the direction of the face of each segment and the previous one: last_theta, last_phi, theta, phi
   double angles[] = {degrees_to_radians(theta), degrees_to_radians(phi), degrees_to_radians(theta), degrees_to_radians(phi)};
 
@@ -568,29 +568,42 @@ void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,
   //Grow the tendril
   int complete = 0;
   for(int i = 0; (i < length + res) && !complete; i++){
-    //free(last_pos);
     last_pos = pos;
     memcpy(angles, angles + 2, 2 * sizeof(double));
     angles[2] += degrees_to_radians((rand() % (2 * variance)) - variance);
     angles[3] += degrees_to_radians((rand() % (2 * variance)) - variance);
     pos = generate_cone(pos[3], pos[4], pos[5], angles[2], angles[3], int_angle, cone_radius, res);
+
     if(i > length - 1){
       switch(end){
 	case Sphere:
+	  if(i == length){
+	    memcpy(last_pos, last_pos + 3, 3 * sizeof(double));
+	    int_angle = M_PI / 2;
+	    int_angle_decrease = (M_PI / res);
+	  }
+	  int_angle -= int_angle_decrease;
+	  pos = generate_cone(last_pos[0], last_pos[1], last_pos[2], angles[2], angles[3], int_angle, radius, res);
 	  break;
 	case Cone:
 	  for(int p = 6; p < (res + 2) * 3; p += 3){
 	    add_triangle(e, last_pos[p], last_pos[p + 1], last_pos[p + 2],
 			 last_pos[p + 3], last_pos[p + 4], last_pos[p + 5],
-			 pos[3], pos[4], pos[3]);
+			 pos[3], pos[4], pos[5]);
 	  }
 	  complete = 1;
 	  break;
 	case Tapered_Cone:
+	  if(i == length){
+	    memcpy(last_pos, last_pos + 3, 3 * sizeof(double));
+	    int_angle -= int_angle_decrease;
+	  }
+	  int_angle -= int_angle_decrease;
+	  pos = generate_cone(last_pos[0], last_pos[1], last_pos[2], angles[2], angles[3], int_angle, radius, res);
 	  break;
       }
-
-    }else{
+    }
+    if(!complete){
       //Use the two cones given as rings, create another segment of the tendril by joining them
       for(int p = 6; p < (res + 2) * 3; p += 3){
 	add_quadrilateral(e, pos[p], pos[p + 1], pos[p + 2],
@@ -599,6 +612,7 @@ void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,
 			  last_pos[p], last_pos[p + 1], last_pos[p + 2]);
       }
     }
+
   }
 }
 
