@@ -17,6 +17,16 @@ void pop_loop(LOOP ** loop){
   free(*loop);
   *loop = l;
 }
+void trimleading(char *s){
+	int i,j;
+	for(i=0;s[i]==' '||s[i]=='\t';i++);
+
+	for(j=0;s[i];i++)
+	{
+		s[j++]=s[i];
+	}
+	s[j]='\0';
+}
 void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
@@ -26,12 +36,13 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   char line[256];
   LOOP * loop_stack;
   clear_grid(s);
-  if ( strcmp(filename, "stdin") == 0 ) 
+  if ( strcmp(filename, "stdin") == 0 )
     f = stdin;
   else
     f = fopen(filename, "r");
   enum command c = -1;
   while(fgets(line, 255, f) != NULL) {
+    trimleading(line);
     if(c == -1){
       line[strlen(line)-1]='\0';
       for(int k = 0; k < 21; k++)
@@ -99,7 +110,7 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	    bezier(e, positions, 3, .05);
 	    break;
 	  }
-	  
+
 	  case Hermite:{
 	    double data[] = {atoi(a[0]), atoi(a[1]), 0,
 			     atoi(a[2]), atoi(a[3]), 0,
@@ -125,7 +136,7 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	    sphere(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]));
 	    break;
 	  case Torus:
-	    torus(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]), atoi(a[4]));	    
+	    torus(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]), atoi(a[4]));
 	    break;
 	  case Cone:
 	    cone(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  degrees_to_radians(atoi(a[3])),  degrees_to_radians(atoi(a[4])),  degrees_to_radians(atoi(a[5])), atoi(a[6]), atoi(a[7]), atoi(a[8]));
@@ -147,7 +158,7 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	      case 'y': rotate_y_axis(transform, atoi(a[1]) * M_PI / 180.0);
 		break;
 	      case 'z': rotate_z_axis(transform, atoi(a[1]) * M_PI / 180.0);
-		break;		
+		break;
 	    }
 	    transform_stack(stack, transform);
 	    ident(transform);
