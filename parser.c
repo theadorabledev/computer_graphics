@@ -1,12 +1,30 @@
 #include "library.h"
-
+typedef struct loop LOOP;
+typedef struct loop{
+  int pos;
+  int repeats;
+  LOOP * next;
+} LOOP;
+void add_to_loop(LOOP ** loop, int pos, int repeats){
+  LOOP * l = malloc(sizeof(LOOP));
+  l->pos = pos;
+  l->repeats = repeats - 1;
+  l->next = *loop;
+  *loop = l;
+}
+void pop_loop(LOOP ** loop){
+  LOOP * l = (*loop)->next;
+  free(*loop);
+  *loop = l;
+}
 void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
-  enum command{Comment, Display, Push, Pop, Color, Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save};
-  char * commands[] = {"comment", "display", "push", "pop", "color", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save"};
+  enum command{Comment, Display, Push, Pop, Loop_End, Loop, Color, Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save};
+  char * commands[] = {"comment", "display", "push", "pop", "loop_end", "loop", "color", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save"};
   FILE *f;
   char line[256];
+  LOOP * loop_stack;
   clear_grid(s);
   if ( strcmp(filename, "stdin") == 0 ) 
     f = stdin;
@@ -16,10 +34,10 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   while(fgets(line, 255, f) != NULL) {
     if(c == -1){
       line[strlen(line)-1]='\0';
-      for(int k = 0; k < 19; k++)
+      for(int k = 0; k < 21; k++)
 	if(!strcmp(line, commands[k]) || (k == 0 && line[0] == '#'))
 	  c = k;
-      if(c < 4){
+      if(c < 5){
 	switch(c){
 	  case Display:
 	    write_image(s, "temp.ppm");
@@ -30,6 +48,14 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	    break;
 	  case Pop:
 	    stack = pop_from_stack(stack);
+	    break;
+	  case Loop_End:
+	    if(!(loop_stack->repeats)){
+	      pop_loop(&loop_stack);
+	    }else{
+	      loop_stack->repeats -= 1;
+	      fseek(f, loop_stack->pos, SEEK_SET);
+	    }
 	    break;
 	}
 	c = -1;
@@ -50,6 +76,9 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	  ptr = strtok (NULL, " ");
 	}
 	switch(c){
+	  case Loop:
+	    add_to_loop(&loop_stack, ftell(f), atoi(a[0]));
+	    break;
 	  case Color:
 	    if(atoi(a[0]) < 0)
 	      set_color(e, atoi(a[0]));
