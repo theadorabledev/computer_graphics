@@ -548,14 +548,19 @@ void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,	
 void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance, int length, int radius, int end, int res){
   //The different kinds of endings / tails these things can have
   enum tendril_end{Sphere, Cone, Tapered_Cone};
+  //Some useful variables
+  int pulsate = 1;
+  int og_cone_radius = radius / sin(M_PI / 4);
   int cone_radius = radius / sin(M_PI / 4);
+  double og_int_angle = M_PI / 4;
   double int_angle = M_PI / 4;
   double int_angle_decrease = int_angle / res;
+
   //Represent the direction of the face of each segment and the previous one: last_theta, last_phi, theta, phi
   double angles[] = {degrees_to_radians(theta), degrees_to_radians(phi), degrees_to_radians(theta), degrees_to_radians(phi)};
 
   // Hold the current segment and the last one
-  double * last_pos;
+  double * last_pos = 0;
   double *pos = generate_cone(x, y, z, angles[0], angles[1], int_angle, cone_radius, res);
 
   // Close off the base of the tendril
@@ -568,10 +573,15 @@ void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,
   //Grow the tendril
   int complete = 0;
   for(int i = 0; (i < length + res) && !complete; i++){
+    if(last_pos)
+      free(last_pos);
     last_pos = pos;
     memcpy(angles, angles + 2, 2 * sizeof(double));
     angles[2] += degrees_to_radians((rand() % (2 * variance)) - variance);
     angles[3] += degrees_to_radians((rand() % (2 * variance)) - variance);
+    if(pulsate){
+	cone_radius = og_cone_radius + (og_cone_radius * (sin(degrees_to_radians(((rand() % 30) + 45) * i))) / 2);
+    }
     pos = generate_cone(pos[3], pos[4], pos[5], angles[2], angles[3], int_angle, cone_radius, res);
 
     if(i > length - 1){
@@ -583,6 +593,7 @@ void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,
 	    int_angle_decrease = (M_PI / res);
 	  }
 	  int_angle -= int_angle_decrease;
+	  free(pos);
 	  pos = generate_cone(last_pos[0], last_pos[1], last_pos[2], angles[2], angles[3], int_angle, radius, res);
 	  break;
 	case Cone:
@@ -599,6 +610,7 @@ void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,
 	    int_angle -= int_angle_decrease;
 	  }
 	  int_angle -= int_angle_decrease;
+	  free(pos);
 	  pos = generate_cone(last_pos[0], last_pos[1], last_pos[2], angles[2], angles[3], int_angle, radius, res);
 	  break;
       }
