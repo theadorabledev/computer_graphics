@@ -549,7 +549,7 @@ void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,
   //The different kinds of endings / tails these things can have
   enum tendril_end{Sphere, Cone, Tapered_Cone};
   //Some useful variables
-  int pulsate = 1;
+  int pulsate = 0;
   int og_cone_radius = radius / sin(M_PI / 4);
   int cone_radius = radius / sin(M_PI / 4);
   double og_int_angle = M_PI / 4;
