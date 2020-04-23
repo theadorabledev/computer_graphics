@@ -1,151 +1,104 @@
 #theadorabledev.github.io
 #AND IF YOU GAZE FOR LONG INTO AN ABYSS, THE ABYSS GAZES ALSO INTO YOU
-color
-0 0 0
-box
-0 500 -500 500 500 100
+color 0 0 0
+box 0 500 -500 500 500 100
 #THE HOLY STARS IN THE COSMOS
-color
-255 255 255
-speckle
-0 0 -100 500 500 1 1 2 0
-color
--2
+color 255 255 255
+speckle 0 0 -100 500 500 1 1 2 0
+color -2
 #DAYDREAM, I FELL ASLEEP AMIDST THE FLOWERS, FOR A COUPLE OF HOURS, WHAT A WONDERFUL DAY
-flower
-0 -20 100 90 0 20 100 100 1
-flower
-100 -20 100 90 0 20 100 100 1
-flower
-300 -20 100 90 0 20 100 100 1
-flower
-500 -20 100 90 0 20 100 100 1
+flower 0 -20 100 90 0 20 100 100 1
+flower 100 -20 100 90 0 20 100 100 1
+flower 300 -20 100 90 0 20 100 100 1
+flower 500 -20 100 90 0 20 100 100 1
 
-flower
-0 20 -100 90 0 20 100 100 1
-flower
-100 20 -100 90 0 20 100 100 1
-flower
-300 20 -100 90 0 20 100 100 1
-flower
-500 20 -100 90 0 20 100 100 1
+flower 0 20 -100 90 0 20 100 100 1
+flower 100 20 -100 90 0 20 100 100 1
+flower 300 20 -100 90 0 20 100 100 1
+flower 500 20 -100 90 0 20 100 100 1
+
 #BODY
 push
-move
-250 200 0
-rotate
-y -30
-box
--100 125 50 200 250 100
+move 250 200 0
+rotate y -30
+box -100 125 50 200 250 100
+
 #HEAD
 push
-move
-0 175 0
-rotate
-y 90
-sphere
-0 0 0 50
+move 0 175 0
+rotate y 90
+sphere 0 0 0 50
+
 #EYES
-color
-255 255 255
+color 255 255 255
 push
-rotate
-y -90
-
-sphere
--15 10 50 15
-sphere
-30 10 50 15
-
-color
--2 
-sphere
--15 10 60 10
-sphere
-30 10 60 10
+rotate y -90
+sphere -15 10 50 15
+sphere 30 10 50 15
+color -2 
+sphere -15 10 60 10
+sphere 30 10 60 10
 pop
+
 #HALO
-color
-212 175 55
+color 212 175 55 #gold
 push
-rotate
-y -90
-rotate
-x -20
-torus
-0 50 0 5 60
-speckle
--75 40 -75 150 20 150 1 2 0
+rotate y -90
+rotate x -20
+torus 0 50 0 5 60
+speckle -75 40 -75 150 20 150 1 2 0
 pop
+
 #HAIR
-color
--2
-flower
--25 50 -20 -45 90 5 40 25 0
-flower
-0 25 -10 -45 90 5 40 25 0
-flower
-25 25 -10 -45 90 5 40 25 0
-flower
--25 40 -20 -45 90 5 40 25 0
-flower
-0 50 -10 -45 90 5 40 25 0
-flower
-25 50 -10 -45 90 5 40 25 0
+color -2
+flower -25 50 -20 -45 90 5 40 25 0
+flower 0 25 -10 -45 90 5 40 25 0
+flower 25 25 -10 -45 90 5 40 25 0
+flower -25 40 -20 -45 90 5 40 25 0
+flower 0 50 -10 -45 90 5 40 25 0
+flower 25 50 -10 -45 90 5 40 25 0
 pop
 
 #LEFT ARM
 push
-move
--100 125 0
-rotate
-x -45
-box
--40 0 40 40 100 80
+move -100 125 0
+rotate x -45
+box -40 0 40 40 100 80
+
 #LEFT LOWER ARM
 push
-move
--20 -100 0
-rotate
-x -45
-box
--10 0 10 20 125 20
+move -20 -100 0
+rotate x -45
+box -10 0 10 20 125 20
 pop
 pop
+
 #RIGHT ARM
 push
-move
-100 125 0
-rotate
-x -45
-box
-0 0 40 40 100 80
+move 100 125 0
+rotate x -45
+box 0 0 40 40 100 80
+
 #RIGHT LOWER ARM
 push
-move
-20 -100 0
-rotate
-x -20
-box
--10 0 10 20 125 20
+move 20 -100 0
+rotate x -20
+box -10 0 10 20 125 20
 #FLOWERS
-flower
-10 -120 20 0 5 12 20 10 1
+flower 10 -120 20 0 5 12 20 10 1
 pop
 pop
+
 #LEFT LEG
 push
-move
--100 -125 0
-box
-0 0 40 50 120 80
+move -100 -125 0
+box 0 0 40 50 120 80
 pop
+
 #RIGHT LEG
 push
-move
-100 -125 0
-box
--50 0 40 50 120 80
+move 100 -125 0
+box -50 0 40 50 120 80
+
 display
-save
-savior.ppm
+save savior.ppm
