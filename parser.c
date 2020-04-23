@@ -1,4 +1,18 @@
 #include "library.h"
+#define BUILD0(x) atoi(x[0])
+#define BUILD1(x) BUILD0(x), atoi(x[1])
+#define BUILD2(x) BUILD1(x), atoi(x[2])
+#define BUILD3(x) BUILD2(x), atoi(x[3])
+#define BUILD4(x) BUILD3(x), atoi(x[4])
+#define BUILD5(x) BUILD4(x), atoi(x[5])
+#define BUILD6(x) BUILD5(x), atoi(x[6])
+#define BUILD7(x) BUILD6(x), atoi(x[7])
+#define BUILD8(x) BUILD7(x), atoi(x[8])
+#define BUILD9(x) BUILD8(x), atoi(x[9])
+#define BUILD10(x) BUILD9(x), atoi(x[10])
+#define BUILD11(x) BUILD10(x), atoi(x[11])
+#define BUILD(x, i) BUILD##i(x)
+
 typedef struct loop LOOP;
 typedef struct loop{
   int pos;
@@ -18,15 +32,15 @@ void pop_loop(LOOP ** loop){
   *loop = l;
 }
 void trimleading(char *s){
-	int i,j;
-	for(i=0;s[i]==' '||s[i]=='\t';i++);
+  int i,j;
+  for(i=0; s[i]==' '||s[i]=='\t';i++);
 
-	for(j=0;s[i];i++)
-	{
-		s[j++]=s[i];
-	}
-	s[j]='\0';
+  for(j=0;s[i];i++){
+    s[j++]=s[i];
+  }
+  s[j]='\0';
 }
+
 void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
@@ -41,136 +55,158 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   else
     f = fopen(filename, "r");
   enum command c = -1;
+
+  int a_pos = 0;
   while(fgets(line, 255, f) != NULL) {
     trimleading(line);
-    if(c == -1){
-      line[strlen(line)-1]='\0';
-      for(int k = 0; k < 21; k++)
-	if(!strcmp(line, commands[k]) || (k == 0 && line[0] == '#'))
-	  c = k;
-      if(c < 5){
-	switch(c){
-	  case Display:
-	    write_image(s, "temp.ppm");
-	    system("display temp.ppm");
-	    break;
-	  case Push:
-	    stack = push_to_stack(stack);
-	    break;
-	  case Pop:
-	    stack = pop_from_stack(stack);
-	    break;
-	  case Loop_End:
-	    if(!(loop_stack->repeats)){
-	      pop_loop(&loop_stack);
-	    }else{
-	      loop_stack->repeats -= 1;
-	      fseek(f, loop_stack->pos, SEEK_SET);
-	    }
-	    break;
-	}
-	c = -1;
-      }
-    }else{
-      if(c == Save){
-	system("rm -rf temp.ppm");
-	line[strlen(line)-1]='\0';
-	write_image(s, line);
-
-      }else{
-	line[strlen(line)-1]='\0';
-	char *a[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-	char *ptr = strtok(line, " ");
-	int k = 0;
-	while (ptr != NULL){
-	  a[k++] = ptr;
-	  ptr = strtok (NULL, " ");
-	}
-	switch(c){
-	  case Loop:
-	    add_to_loop(&loop_stack, ftell(f), atoi(a[0]));
-	    break;
-	  case Color:
-	    if(atoi(a[0]) < 0)
-	      set_color(e, atoi(a[0]));
-	    else
-	      set_color(e, rgb(atoi(a[0]), atoi(a[1]), atoi(a[2])));
-	    break;
-	  case Line:
-	    add_line(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]));
-	    break;
-	  case Circle:
-	    circle(e, atoi(a[0]), atoi(a[1]), atoi(a[2]), atoi(a[3]));
-	    break;
-	  case Bezier:{
-	    int positions[] = {atoi(a[0]), atoi(a[1]), 0,
-			       atoi(a[2]), atoi(a[3]), 0,
-			       atoi(a[4]), atoi(a[5]), 0,
-			       atoi(a[6]), atoi(a[7]), 0};
-	    bezier(e, positions, 3, .05);
-	    break;
+    line[strlen(line)-1]='\0';
+    if(!strlen(line))
+      continue;
+    char *a[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    char *ptr = strtok(line, " ");
+    int j = 0;
+    int one_line = 0;
+    while (ptr != NULL){
+      a[j++] = ptr;
+      ptr = strtok (NULL, " ");
+    }
+    for(int k = 0; k < 21; k++)
+      if(!strcmp(a[0], commands[k]) || (k == 0 && a[0] && a[0][0] == '#'))
+	c = k;
+    if(c < 5){
+      switch(c){
+	case Display:
+	  write_image(s, "temp.ppm");
+	  system("display temp.ppm");
+	  break;
+	case Push:
+	  stack = push_to_stack(stack);
+	  break;
+	case Pop:
+	  stack = pop_from_stack(stack);
+	  break;
+	case Loop_End:
+	  if(!(loop_stack->repeats)){
+	    pop_loop(&loop_stack);
+	  }else{
+	    loop_stack->repeats -= 1;
+	    fseek(f, loop_stack->pos, SEEK_SET);
 	  }
-
-	  case Hermite:{
-	    double data[] = {atoi(a[0]), atoi(a[1]), 0,
-			     atoi(a[2]), atoi(a[3]), 0,
-			     atoi(a[4]), atoi(a[5]), 0,
-			     atoi(a[6]), atoi(a[7]), 0};
-	    hermite(e, data, .05);
-	    break;
-	  }
-	  case Speckle:
-	    speckle(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]), atoi(a[6]), atoi(a[7]), atoi(a[8]));
-	    break;
-	  case Flower:
-	    flower(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]), atoi(a[6]), atoi(a[7]), atoi(a[8]));
-	    break;
-	  case Tendril:
-	    //void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance, int length, int radius, int res);
-	    tendril(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]), atoi(a[6]), atoi(a[7]), atoi(a[8]), atoi(a[9]));
-	    break;
-	  case Box:
-	    box(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]),  atoi(a[4]),  atoi(a[5]));
-	    break;
-	  case Sphere:
-	    sphere(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]));
-	    break;
-	  case Torus:
-	    torus(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  atoi(a[3]), atoi(a[4]));
-	    break;
-	  case Cone:
-	    cone(e, atoi(a[0]),  atoi(a[1]),  atoi(a[2]),  degrees_to_radians(atoi(a[3])),  degrees_to_radians(atoi(a[4])),  degrees_to_radians(atoi(a[5])), atoi(a[6]), atoi(a[7]), atoi(a[8]));
-	    break;
-	  case Scale:
-	    scale(transform, atoi(a[0]), atoi(a[1]), atoi(a[2]));
-	    transform_stack(stack, transform);
-	    ident(transform);
-	    break;
-	  case Move:
-	    translate(transform, atoi(a[0]), atoi(a[1]), atoi(a[2]));
-	    transform_stack(stack, transform);
-	    ident(transform);
-	    break;
-	  case Rotate:
-	    switch(a[0][0]){
-	      case 'x': rotate_x_axis(transform, atoi(a[1]) * M_PI / 180.0);
-		break;
-	      case 'y': rotate_y_axis(transform, atoi(a[1]) * M_PI / 180.0);
-		break;
-	      case 'z': rotate_z_axis(transform, atoi(a[1]) * M_PI / 180.0);
-		break;
-	    }
-	    transform_stack(stack, transform);
-	    ident(transform);
-	    break;
-	}
-	multiply(stack, e->edge_matrix);
-	multiply(stack, e->triangle_matrix);
-	plot_element(e, s);
-	clear(e);
+	  break;
       }
       c = -1;
     }
+    else{
+      if(a[1]){
+	one_line = 1;
+      }else{
+	fgets(line, 255, f);
+	trimleading(line);
+	line[strlen(line)-1]='\0';
+
+	while(!strlen(line)){
+	  fgets(line, 255, f);
+	  trimleading(line);
+	  line[strlen(line)-1]='\0';
+	}
+
+	ptr = strtok(line, " ");
+	j = 0;
+	while (ptr != NULL){
+	  a[j++] = ptr;
+	  ptr = strtok (NULL, " ");
+	}
+      }
+      switch(c){
+	case Save:
+	  system("rm -rf temp.ppm");
+	  write_image(s, (a + one_line)[0]);
+	  break;
+	case Loop:
+	  add_to_loop(&loop_stack, ftell(f), atoi((a + one_line)[0]));
+	  break;
+	case Color:
+	  if(atoi((a + one_line)[0]) < 0)
+	    set_color(e, atoi((a + one_line)[0]));
+	  else
+	    set_color(e, rgb(BUILD((a + one_line), 2)));
+	  break;
+	case Line:
+	  add_line(e, BUILD((a + one_line), 5));
+	  break;
+	case Circle:
+	  circle(e, BUILD((a + one_line), 3));
+	  break;
+	case Bezier:{
+	  int positions[] = {atoi((a + one_line)[0]), atoi((a + one_line)[1]), 0,
+			     atoi((a + one_line)[2]), atoi((a + one_line)[3]), 0,
+			     atoi((a + one_line)[4]), atoi((a + one_line)[5]), 0,
+			     atoi((a + one_line)[6]), atoi((a + one_line)[7]), 0};
+	  bezier(e, positions, 3, .05);
+	  break;
+	}
+
+	case Hermite:{
+	  double data[] = {atoi((a + one_line)[0]), atoi((a + one_line)[1]), 0,
+			   atoi((a + one_line)[2]), atoi((a + one_line)[3]), 0,
+			   atoi((a + one_line)[4]), atoi((a + one_line)[5]), 0,
+			   atoi((a + one_line)[6]), atoi((a + one_line)[7]), 0};
+	  hermite(e, data, .05);
+	  break;
+	}
+	case Speckle:
+	  speckle(e, BUILD((a + one_line), 8));
+	  break;
+	case Flower:
+	  flower(e, BUILD((a + one_line), 8));
+	  break;
+	case Tendril:
+	  tendril(e, BUILD((a + one_line), 9));
+	  break;
+	case Box:
+	  box(e, BUILD((a + one_line), 5));
+	  break;
+	case Sphere:
+	  sphere(e, BUILD((a + one_line), 3));
+	  break;
+	case Torus:
+	  torus(e, BUILD((a + one_line), 4));
+	  break;
+	case Cone:
+	  cone(e, atoi((a + one_line)[0]),  atoi((a + one_line)[1]),  atoi((a + one_line)[2]),
+	       degrees_to_radians(atoi((a + one_line)[3])),  degrees_to_radians(atoi((a + one_line)[4])),  degrees_to_radians(atoi((a + one_line)[5])),
+	       atoi((a + one_line)[6]), atoi((a + one_line)[7]), atoi((a + one_line)[8]));
+	  break;
+	case Scale:
+	  scale(transform, BUILD((a + one_line), 2));
+	  transform_stack(stack, transform);
+	  ident(transform);
+	  break;
+	case Move:
+	  translate(transform, BUILD((a + one_line), 2));
+	  transform_stack(stack, transform);
+	  ident(transform);
+	  break;
+	case Rotate:
+	  switch((a + one_line)[0][0]){
+	    case 'x': rotate_x_axis(transform, atoi((a + one_line)[1]) * M_PI / 180.0);
+	      break;
+	    case 'y': rotate_y_axis(transform, atoi((a + one_line)[1]) * M_PI / 180.0);
+	      break;
+	    case 'z': rotate_z_axis(transform, atoi((a + one_line)[1]) * M_PI / 180.0);
+	      break;
+	  }
+	  transform_stack(stack, transform);
+	  ident(transform);
+	  break;
+      }
+      multiply(stack, e->edge_matrix);
+      multiply(stack, e->triangle_matrix);
+      plot_element(e, s);
+      clear(e);
+      c = -1;
+    }
+
   }
 }
 
