@@ -73,6 +73,7 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
     if(!strlen(line))
       continue;
     char *a[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    char **args = a;
     char *ptr = strtok(line, " ");
     int j = 0;
     int one_line = 0;
@@ -80,7 +81,7 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
       a[j++] = ptr;
       ptr = strtok (NULL, " ");
     }
-    for(int k = 0; k < 22; k++)
+    for(int k = 0; k < 24; k++)
       if(!strcmp(a[0], commands[k]) || (k == 0 && a[0] && a[0][0] == '#'))
 	c = k;
     if(c < 5){
@@ -112,6 +113,7 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
     else{
       if(a[1]){
 	one_line = 1;
+	args++;
       }else{
 	fgets(line, 255, f);
 	trimleading(line);
@@ -136,105 +138,102 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	  a[i] = t ? *t : "0";
 	}
       }
-      //for(int i = 0; i < 12; i ++)
-      //printf("%d:%s   ", i, a[i]);
-      //printf("\n");
       switch(c){
 	case Save:
 	  system("rm -rf temp.ppm");
-	  write_image(s, (a + one_line)[0]);
+	  write_image(s, args[0]);
 	  break;
 	case For:
 	  //For var start stop inc
 	  //For var start stop -> var start stop 1
 	  //For var stop -> 0 stop 1
-	  if(!(a + one_line)[3]){
-	    if((a + one_line)[2]){
-	      (a + one_line)[3] = "1";
-	    }else if((a + one_line)[1]){
-	      (a + one_line)[2] = (a + one_line)[1];
-	      (a + one_line)[1] = "0";
-	      (a + one_line)[3] = "1";
+	  if(!args[3]){
+	    if(args[2]){
+	      args[3] = "1";
+	    }else if(args[1]){
+	      args[2] = args[1];
+	      args[1] = "0";
+	      args[3] = "1";
 	    }
 	  }
-	  add_to_loop(&loop_stack, ftell(f), STR_COPY((a + one_line)[0]), BUILD((a + one_line + 1), 2));
-	  map_set(&m, loop_stack->var, STR_COPY((a + one_line)[1]));
+	  add_to_loop(&loop_stack, ftell(f), STR_COPY(args[0]), BUILD((args + 1), 2));
+	  map_set(&m, loop_stack->var, STR_COPY(args[1]));
 	  break;
 	case Set:
-	  map_set(&m, (a + one_line)[0], strcpy(malloc(strlen((a + one_line)[1])), (a + one_line)[1]));
+	  map_set(&m, args[0], strcpy(malloc(strlen(args[1])), args[1]));
 	  break;
 	case Srand:
-	  srand(atoi((a + one_line)[0]));
+	  srand(atoi(args[0]));
 	  break;
 	case Color:
-	  if(atoi((a + one_line)[0]) < 0)
-	    set_color(e, atoi((a + one_line)[0]));
+	  if(atoi(args[0]) < 0)
+	    set_color(e, atoi(args[0]));
 	  else
-	    set_color(e, rgb(BUILD((a + one_line), 2)));
+	    set_color(e, rgb(BUILD(args, 2)));
 	  break;
 	case Line:
-	  add_line(e, BUILD((a + one_line), 5));
+	  add_line(e, BUILD(args, 5));
 	  break;
 	case Circle:
-	  circle(e, BUILD((a + one_line), 3));
+	  circle(e, BUILD(args, 3));
 	  break;
 	case Bezier:{
-	  int positions[] = {atoi((a + one_line)[0]), atoi((a + one_line)[1]), 0,
-			     atoi((a + one_line)[2]), atoi((a + one_line)[3]), 0,
-			     atoi((a + one_line)[4]), atoi((a + one_line)[5]), 0,
-			     atoi((a + one_line)[6]), atoi((a + one_line)[7]), 0};
+	  int positions[] = {atoi(args[0]), atoi(args[1]), 0,
+			     atoi(args[2]), atoi(args[3]), 0,
+			     atoi(args[4]), atoi(args[5]), 0,
+			     atoi(args[6]), atoi(args[7]), 0};
 	  bezier(e, positions, 3, .05);
 	  break;
 	}
 
 	case Hermite:{
-	  double data[] = {atoi((a + one_line)[0]), atoi((a + one_line)[1]), 0,
-			   atoi((a + one_line)[2]), atoi((a + one_line)[3]), 0,
-			   atoi((a + one_line)[4]), atoi((a + one_line)[5]), 0,
-			   atoi((a + one_line)[6]), atoi((a + one_line)[7]), 0};
+	  double data[] = {atoi(args[0]), atoi(args[1]), 0,
+			   atoi(args[2]), atoi(args[3]), 0,
+			   atoi(args[4]), atoi(args[5]), 0,
+			   atoi(args[6]), atoi(args[7]), 0};
 	  hermite(e, data, .05);
 	  break;
 	}
 	case Speckle:
-	  speckle(e, BUILD((a + one_line), 8));
+	  speckle(e, BUILD(args, 8));
 	  break;
 	case Flower:
-	  flower(e, BUILD((a + one_line), 8));
+	  flower(e, BUILD(args, 8));
 	  break;
 	case Tendril:
-	  tendril(e, BUILD((a + one_line), 9));
+	  tendril(e, BUILD(args, 9));
 	  break;
 	case Box:
-	  box(e, BUILD((a + one_line), 5));
+	  box(e, BUILD(args, 5));
 	  break;
 	case Sphere:
-	  sphere(e, BUILD((a + one_line), 3));
+	  sphere(e, BUILD(args, 3));
 	  break;
 	case Torus:
-	  torus(e, BUILD((a + one_line), 4));
+	  torus(e, BUILD(args, 4));
 	  break;
 	case Cone:
-	  cone(e, atoi((a + one_line)[0]),  atoi((a + one_line)[1]),  atoi((a + one_line)[2]),
-	       degrees_to_radians(atoi((a + one_line)[3])),  degrees_to_radians(atoi((a + one_line)[4])),  degrees_to_radians(atoi((a + one_line)[5])),
-	       atoi((a + one_line)[6]), atoi((a + one_line)[7]), atoi((a + one_line)[8]));
+	  cone(e, atoi(args[0]),  atoi(args[1]),  atoi(args[2]),
+	       degrees_to_radians(atoi(args[3])),  degrees_to_radians(atoi(args[4])),  degrees_to_radians(atoi(args[5])),
+	       atoi(args[6]), atoi(args[7]), atoi(args[8]));
 	  break;
 	case Scale:
-	  scale(transform, BUILD((a + one_line), 2));
+	  scale(transform, BUILD(args, 2));
 	  transform_stack(stack, transform);
 	  ident(transform);
 	  break;
 	case Move:
-	  translate(transform, BUILD((a + one_line), 2));
+	  translate(transform, BUILD(args, 2));
 	  transform_stack(stack, transform);
 	  ident(transform);
 	  break;
 	case Rotate:
-	  switch((a + one_line)[0][0]){
-	    case 'x': rotate_x_axis(transform, atoi((a + one_line)[1]) * M_PI / 180.0);
+	  switch(args[0][0]){
+	    case 'x': rotate_x_axis(transform, atoi(args[1]) * M_PI / 180.0);
 	      break;
-	    case 'y': rotate_y_axis(transform, atoi((a + one_line)[1]) * M_PI / 180.0);
+	    case 'y': rotate_y_axis(transform, atoi(args[1]) * M_PI / 180.0);
 	      break;
-	    case 'z': rotate_z_axis(transform, atoi((a + one_line)[1]) * M_PI / 180.0);
+	    case 'z': rotate_z_axis(transform, atoi(args[1]) * M_PI / 180.0);
 	      break;
 	  }
 	  transform_stack(stack, transform);
