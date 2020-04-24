@@ -1,4 +1,5 @@
 #include "library.h"
+#include "map/src/map.h"
 #define BUILD0(x) atoi(x[0])
 #define BUILD1(x) BUILD0(x), atoi(x[1])
 #define BUILD2(x) BUILD1(x), atoi(x[2])
@@ -44,8 +45,8 @@ void trimleading(char *s){
 void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
-  enum command{Comment, Display, Push, Pop, Loop_End, Loop, Color, Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save};
-  char * commands[] = {"comment", "display", "push", "pop", "loop_end", "loop", "color", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save"};
+  enum command{Comment, Display, Push, Pop, Loop_End, Loop, Set, Color, Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save};
+  char * commands[] = {"comment", "display", "push", "pop", "loop_end", "loop", "set", "color", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save"};
   FILE *f;
   char line[256];
   LOOP * loop_stack;
@@ -56,7 +57,9 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
     f = fopen(filename, "r");
   enum command c = -1;
 
-  int a_pos = 0;
+  map_str_t m;
+  map_init(&m);
+
   while(fgets(line, 255, f) != NULL) {
     trimleading(line);
     line[strlen(line)-1]='\0';
@@ -70,7 +73,7 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
       a[j++] = ptr;
       ptr = strtok (NULL, " ");
     }
-    for(int k = 0; k < 21; k++)
+    for(int k = 0; k < 22; k++)
       if(!strcmp(a[0], commands[k]) || (k == 0 && a[0] && a[0][0] == '#'))
 	c = k;
     if(c < 5){
@@ -117,6 +120,12 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	  ptr = strtok (NULL, " ");
 	}
       }
+      for(int i = 0; i < 12; i++){
+	if(a[i] && a[i][0] == '$'){
+	  char **t = map_get(&m, a[i] + 1);
+	  a[i] = t ? *t : "0";
+	}
+      }
       switch(c){
 	case Save:
 	  system("rm -rf temp.ppm");
@@ -125,6 +134,10 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	case Loop:
 	  add_to_loop(&loop_stack, ftell(f), atoi((a + one_line)[0]));
 	  break;
+	case Set:{
+	  map_set(&m, (a + one_line)[0], strcpy(malloc(strlen((a + one_line)[1])), (a + one_line)[1]));
+	  break;
+	}
 	case Color:
 	  if(atoi((a + one_line)[0]) < 0)
 	    set_color(e, atoi((a + one_line)[0]));
