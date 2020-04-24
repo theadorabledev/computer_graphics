@@ -45,8 +45,8 @@ void trimleading(char *s){
 void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
-  enum command{Comment, Display, Push, Pop, Loop_End, Loop, Set, Color, Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save};
-  char * commands[] = {"comment", "display", "push", "pop", "loop_end", "loop", "set", "color", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save"};
+  enum command{Comment, Display, Push, Pop, Loop_End, Loop, Set, Srand, Color, Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save};
+  char * commands[] = {"comment", "display", "push", "pop", "loop_end", "loop", "set", "srand", "color", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save"};
   FILE *f;
   char line[256];
   LOOP * loop_stack;
@@ -138,6 +138,9 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	  map_set(&m, (a + one_line)[0], strcpy(malloc(strlen((a + one_line)[1])), (a + one_line)[1]));
 	  break;
 	}
+	case Srand:
+	  srand(atoi((a + one_line)[0]));
+	  break;
 	case Color:
 	  if(atoi((a + one_line)[0]) < 0)
 	    set_color(e, atoi((a + one_line)[0]));
@@ -224,7 +227,7 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 }
 
 int main(int argc, char *argv[]){
-  srand(20);
+  srand(time(0));
   MATRIX * t = generate_matrix(4, 4);
   ident(t);
   ELEMENT * e = generate_element(40, 0);
