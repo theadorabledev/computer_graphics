@@ -17,18 +17,25 @@
 typedef struct loop LOOP;
 typedef struct loop{
   int pos;
-  int repeats;
+  char * var;
+  int start;
+  int end;
+  int inc;
   LOOP * next;
 } LOOP;
-void add_to_loop(LOOP ** loop, int pos, int repeats){
+void add_to_loop(LOOP ** loop, int pos, char * var, int start, int end, int inc){
   LOOP * l = malloc(sizeof(LOOP));
   l->pos = pos;
-  l->repeats = repeats - 1;
+  l->var = var;
+  l->start = start;
+  l->end = end - inc;
+  l->inc = inc;
   l->next = *loop;
   *loop = l;
 }
 void pop_loop(LOOP ** loop){
   LOOP * l = (*loop)->next;
+  free((*loop)->var);
   free(*loop);
   *loop = l;
 }
@@ -45,8 +52,8 @@ void trimleading(char *s){
 void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
-  enum command{Comment, Display, Push, Pop, Loop_End, Loop, Set, Srand, Color, Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save};
-  char * commands[] = {"comment", "display", "push", "pop", "loop_end", "loop", "set", "srand", "color", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save"};
+  enum command{Comment, Display, Push, Pop, End_For, For, Set, Srand, Color, Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save};
+  char * commands[] = {"comment", "display", "push", "pop", "end_for", "for", "set", "srand", "color", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save"};
   FILE *f;
   char line[256];
   LOOP * loop_stack;
@@ -88,14 +95,17 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	case Pop:
 	  stack = pop_from_stack(stack);
 	  break;
-	case Loop_End:
-	  if(!(loop_stack->repeats)){
+	case End_For:{
+	  char ** s = map_get(&m, loop_stack->var);
+	  if(atoi(*s) >= loop_stack->end){
+	    map_remove(&m, loop_stack->var);
 	    pop_loop(&loop_stack);
 	  }else{
-	    loop_stack->repeats -= 1;
+	    sprintf(*s, "%d", atoi(*s) + loop_stack->inc);
 	    fseek(f, loop_stack->pos, SEEK_SET);
 	  }
 	  break;
+	}
       }
       c = -1;
     }
@@ -126,18 +136,33 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	  a[i] = t ? *t : "0";
 	}
       }
+      //for(int i = 0; i < 12; i ++)
+      //printf("%d:%s   ", i, a[i]);
+      //printf("\n");
       switch(c){
 	case Save:
 	  system("rm -rf temp.ppm");
 	  write_image(s, (a + one_line)[0]);
 	  break;
-	case Loop:
-	  add_to_loop(&loop_stack, ftell(f), atoi((a + one_line)[0]));
+	case For:
+	  //For var start stop inc
+	  //For var start stop -> var start stop 1
+	  //For var stop -> 0 stop 1
+	  if(!(a + one_line)[3]){
+	    if((a + one_line)[2]){
+	      (a + one_line)[3] = "1";
+	    }else if((a + one_line)[1]){
+	      (a + one_line)[2] = (a + one_line)[1];
+	      (a + one_line)[1] = "0";
+	      (a + one_line)[3] = "1";
+	    }
+	  }
+	  add_to_loop(&loop_stack, ftell(f), STR_COPY((a + one_line)[0]), BUILD((a + one_line + 1), 2));
+	  map_set(&m, loop_stack->var, STR_COPY((a + one_line)[1]));
 	  break;
-	case Set:{
+	case Set:
 	  map_set(&m, (a + one_line)[0], strcpy(malloc(strlen((a + one_line)[1])), (a + one_line)[1]));
 	  break;
-	}
 	case Srand:
 	  srand(atoi((a + one_line)[0]));
 	  break;
