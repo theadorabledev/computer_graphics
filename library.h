@@ -4,12 +4,13 @@
 #include <math.h>
 #include <limits.h>
 #include <float.h>
-
+#include <time.h>
 #define SWAP(a,b,type) {type ttttttttt=a;a=b;b=ttttttttt;}
 #define PRINT_ARRAY(array, length){		\
     for(int flub = 0; flub < length; flub++)	\
       printf("%f\t", *(array + flub));		\
     printf("\n");}
+#define STR_COPY(s) strcpy(malloc(strlen(s)), s)
 
 typedef struct Matrix MATRIX;
 typedef struct Matrix{
