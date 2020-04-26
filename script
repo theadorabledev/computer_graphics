@@ -1,5 +1,6 @@
 #norbek2003.github.io
 srand 20
+light 2 1 2
 #AND IF YOU GAZE FOR LONG INTO AN ABYSS, THE ABYSS GAZES ALSO INTO YOU
 color 0 0 0
 box 0 500 -500 500 500 100
@@ -52,12 +53,12 @@ pop
 
 #HAIR
 color -2
-flower -25 50 -20 -45 90 5 40 25 0
-flower 0 25 -10 -45 90 5 40 25 0
-flower 25 25 -10 -45 90 5 40 25 0
-flower -25 40 -20 -45 90 5 40 25 0
-flower 0 50 -10 -45 90 5 40 25 0
-flower 25 50 -10 -45 90 5 40 25 0
+flower 50 25 -80 -45 90 5 40 25 0
+flower 40 25 -80 -45 90 5 40 25 0
+flower 25 25 -50 -45 90 5 40 25 0
+flower 40 40 -50 -45 90 5 40 25 0
+flower 40 50 -20 -45 90 5 40 25 0
+flower 25 50 -40 -45 90 5 40 25 0
 pop
 
 #LEFT ARM

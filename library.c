@@ -566,7 +566,12 @@ void cone(ELEMENT * e, int x, int y, int z, double theta, double phi, double inn
       add_triangle(e, (int) data[3], (int) data[4], (int) data[5],
 		   (int) data[i], (int) data[i + 1], (int) data[i + 2],
 		   (int) data[i + 3], (int) data[i + 4], (int) data[i + 5]);
+    }else{
+      add_triangle(e, (int) data[i + 3], (int) data[i + 4], (int) data[i + 5],
+		   (int) data[i], (int) data[i + 1], (int) data[i + 2],
+		   (int) data[0], (int) data[1], (int) data[2]);
     }
+
   }
   free(data);
 }

@@ -1,0 +1,30 @@
+#norbek2003.github.io
+#Life And Searching In A Void
+srand 20
+light 2 1 2
+
+
+set file_name tendrils.ppm
+
+for rot 20
+	srand 20
+	color 0 0 0
+	texture 1 0 0
+	box 0 500 -2000 500 500 500
+	texture .1 .4 .3
+	for theta 0 360 60
+		for phi 0 360 60
+			color -2
+			tendril 250 250 100 $theta $phi 30 $rot 15 0 20
+			color 255 255 0
+			tendril 100 100 -1000 $theta $phi 30 $rot 8 2 20
+			tendril 100 400 -1000 $theta $phi 30 $rot 8 2 20
+			tendril 400 100 -1000 $theta $phi 30 $rot 8 2 20
+			tendril 400 400 -1000 $theta $phi 30 $rot 8 2 20
+		end_for
+	end_for
+	save $file_name $rot
+	clear
+end_for
+gif $file_name test.gif
+
