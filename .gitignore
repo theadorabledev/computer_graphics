@@ -50,3 +50,21 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Images
+*.ppm
+*.png
+*.gif
+
+# Binaries
+library
+3d
+bezier
+line
+matrix
+polygons
+map_bin
+parser
+picmaker
+
+
