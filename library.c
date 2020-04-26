@@ -283,7 +283,6 @@ void copy_last_col(ELEMENT * e){
   add_col(e, m[0][l], m[1][l], m[2][l], 0);
 }
 void add_line(ELEMENT * e, int x, int y, int z, int x2, int y2, int z2){
-  //printf("(%d %d %d %d %d %d)\n", x, y, z, x2, y2, z2);
   add_col(e, x, y, z, 0);
   add_col(e, x2, y2, z2, 0);
 }
@@ -315,9 +314,10 @@ void set_color(ELEMENT * e, int color){
   e->color = color;
 }
 void draw_scanline(GRID * g, int x1, int x2, int y, double z1, double z2, int color){
-
-  if(x1 > x2)
+  if(x1 > x2){
     SWAP(x1, x2, int);
+    SWAP(z2, z1, double);
+  }
   double dz = (z2 - z1) / (x2 - x1);
   while(x1 < x2){
     plot(g, x1, y, z1, color);
@@ -340,7 +340,6 @@ void draw_triangle(ELEMENT * e, GRID * g, int c, int color){
     SWAP(top, mid, int);
   if(m->data[1][mid] == m->data[1][bot] && m->data[0][mid] < m->data[0][bot])
     SWAP(mid, bot, int);
-
   //Setup the variables for the loop
   int y = m->data[1][bot];
   int y_mid = m->data[1][mid];
@@ -352,7 +351,7 @@ void draw_triangle(ELEMENT * e, GRID * g, int c, int color){
   double z1 = m->data[2][bot];
   double z2 = m->data[2][bot];
 
-  //Flat bottom
+  //Flat bottom, unlike mine
   if(y == y_mid){
     x2 = m->data[0][mid];
     z2 = m->data[2][mid];
@@ -365,15 +364,14 @@ void draw_triangle(ELEMENT * e, GRID * g, int c, int color){
   double dz_0 = (m->data[2][top] - m->data[2][bot]) / (y_top - y);
   double dz_1 = (m->data[2][mid] - m->data[2][bot]) / (y_mid - y);
   double dz_2 = (m->data[2][top] - m->data[2][mid]) / (y_top - y_mid);
-  /* printf("%d -- (%d %d %d) (%d %d %d) (%d %d %d) \n", c, */
-  /*	 (int) m->data[0][top], (int) m->data[1][top], (int) m->data[2][top], */
-  /*	 (int) m->data[0][mid], (int) m->data[1][mid], (int) m->data[2][mid], */
-  /*	 (int) m->data[0][bot], (int) m->data[1][bot], (int) m->data[2][bot] */
-  /*	 ); */
+  /* printf("%d -- (%d %d %d) (%d %d %d) (%d %d %d)  -  %f %f  - %f %f %f\n", c, */
+  /* 	 (int) m->data[0][top], (int) m->data[1][top], (int) m->data[2][top], */
+  /* 	 (int) m->data[0][mid], (int) m->data[1][mid], (int) m->data[2][mid], */
+  /* 	 (int) m->data[0][bot], (int) m->data[1][bot], (int) m->data[2][bot], */
+  /* 	 z1, z2, dz_0, dz_1, dz_2); */
 
   if(!(y_top - y)){
     dx_0 = 0;
-
   }
   while(y < y_mid){
     draw_scanline(g, (int) x1, (int) x2, y, z1, z2, color);
