@@ -26,5 +26,5 @@ for rot 20
 	save $file_name $rot
 	clear
 end_for
-gif $file_name test.gif
-
+gif $file_name tendrils.gif
+display tendrils.gif

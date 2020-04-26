@@ -120,8 +120,15 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
       case Comment:
 	break;
       case Display:
-	write_image(s, "temp.ppm");
-	system("display temp.ppm");
+	if(args[1]){
+	  char buf[30];
+	  sprintf(buf, "display %s", args[1]);
+	  printf("%s\n", buf);
+	  system(buf);
+	}else{
+	  write_image(s, "temp.ppm");
+	  system("display temp.ppm");
+	}
 	break;
       case Clear:
 	clear_grid(s);
