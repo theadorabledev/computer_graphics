@@ -21,8 +21,8 @@ bezier: bezier.c library
 parser: parser.c map library
 	$(CC) -o parser parser.c map_bin library -lm
 run: picmaker line matrix parser bezier
-	echo "Running test script."
 	./parser script
+	#./parser tendril_script
 	make convert
 	make clean
 

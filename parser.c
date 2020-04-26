@@ -52,8 +52,8 @@ void trimleading(char *s){
 void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
-  enum command{Comment, Display, Push, Pop, End_For, For, Set, Srand, Color, Light, Texture,  Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save};
-  char * commands[] = {"comment", "display", "push", "pop", "end_for", "for", "set", "srand", "color", "light", "texture", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save"};
+  enum command{Comment, Display, Clear, Push, Pop, End_For, For, Set, Srand, Color, Light, Texture,  Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save, Gif};
+  char * commands[] = {"comment", "display", "clear", "push", "pop", "end_for", "for", "set", "srand", "color", "light", "texture", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save", "gif"};
   FILE *f;
   char line[256];
   LOOP * loop_stack;
@@ -81,10 +81,10 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
       a[j++] = ptr;
       ptr = strtok (NULL, " ");
     }
-    for(int k = 0; k < 26; k++)
+    for(int k = 0; k < 28; k++)
       if(!strcmp(a[0], commands[k]) || (k == 0 && a[0] && a[0][0] == '#'))
 	c = k;
-    if(c > 4){
+    if(c > 5){
       if(a[1]){
 	one_line = 1;
 	args++;
@@ -113,11 +113,18 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	}
       }
     }
+    /* for(int i = 0; i < 10 && args[i]; i++) */
+    /*   printf("%s ", args[i]); */
+    /* printf("------- %d\n", c); */
     switch(c){
+      case Comment:
+	break;
       case Display:
 	write_image(s, "temp.ppm");
 	system("display temp.ppm");
 	break;
+      case Clear:
+	clear_grid(s);
       case Push:
 	stack = push_to_stack(stack);
 	break;
@@ -135,10 +142,22 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	}
 	break;
       }
-      case Save:
+      case Save:{
 	system("rm -rf temp.ppm");
-	write_image(s, args[0]);
+	char buf[30];
+	if(args[1])
+	  sprintf(buf, "%03d_", (int) atoi(args[1]));
+	strcat(buf, args[0]);
+	write_image(s, buf);
 	break;
+      }
+      case Gif:{
+	char buf[100];
+	sprintf(buf, "convert -delay 10 -loop 0 *_%s %s && rm *_%s", args[0], args[1], args[0]);
+	printf("%s\n", buf);
+	system(buf);
+	break;
+      }
       case For:
 	//For var start stop inc
 	//For var start stop -> var start stop 1
