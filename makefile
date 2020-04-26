@@ -21,10 +21,10 @@ bezier: bezier.c library
 parser: parser.c map library
 	$(CC) -o parser parser.c map_bin library -lm
 run: picmaker line matrix parser bezier
-	./parser script
-	#./parser tendril_script
-	make convert
-	make clean
+	#./parser script
+	./parser tendril_script
+	#make convert
+	#make clean
 
 display:
 	display *.png
