@@ -26,6 +26,13 @@ typedef struct Grid{
   int **data;
   double **z_buffer;
 } GRID;
+typedef double* VECTOR;
+typedef struct _Light LIGHT;
+typedef struct _Light{
+  VECTOR vector;
+  VECTOR rgb;
+  LIGHT *next;
+} LIGHT;
 typedef struct Element ELEMENT;
 typedef struct Element{
   MATRIX * edge_matrix;
@@ -35,9 +42,12 @@ typedef struct Element{
   int triangle_length;
   ELEMENT * next_element;
   ELEMENT * children;
+  double ambient_const;
+  double diffuse_const;
+  double specular_const;
+  LIGHT * lights;
 } ELEMENT;
 
-typedef double* VECTOR;
 GRID * generate_grid(int width, int height);
 void plot(GRID * grid, int x, int y, double z, int rgb);
 void clear_grid(GRID * grid);
@@ -51,6 +61,9 @@ double degrees_to_radians(int degrees);
 int radians_to_degrees(double radians);
 
 #define M_PI 3.14159265358979323846
+
+void add_light(ELEMENT * e, int x, int y, int z, int r, int g, int b);
+void set_texture(ELEMENT * e, double ac, double dc, double sc);
 
 ELEMENT * generate_element(int size, int color);
 void add_line(ELEMENT * e, int x, int y, int z, int x2, int y2, int z2);

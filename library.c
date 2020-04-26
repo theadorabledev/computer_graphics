@@ -158,10 +158,28 @@ VECTOR generate_vector(double x, double y, double z){
   v[2] = z;
   return v;
 }
+VECTOR subtract(VECTOR a, VECTOR b){
+  return generate_vector(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+}
+VECTOR scale_vector(VECTOR v, double d){
+  return generate_vector(v[0] * d, v[1] * d, v[2] * d);
+}
 double dot_product(VECTOR a, VECTOR b){
   return (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]);
 }
-VECTOR calculate_normal(MATRIX * matrix, int i){
+VECTOR cross_product(VECTOR a, VECTOR b){
+  return generate_vector((a[1] * b[2]) - (a[2] * b[1]),
+			     (a[2] * b[0]) - (a[0] * b[2]),
+			     (a[0] * b[1]) - (a[1] * b[0]));
+}
+double magnitude(VECTOR v){
+  return sqrt(pow(v[0], 2) + pow(v[1], 2) + pow(v[2], 2));
+}
+VECTOR normalized(VECTOR v){
+  double m = magnitude(v);
+  return generate_vector(v[0] / m, v[1] / m, v[2] / m);
+}
+VECTOR calculate_surface_normal(MATRIX * matrix, int i){
   double **m = matrix->data;
   VECTOR a = generate_vector(m[0][i + 1] - m[0][i],
 			     m[1][i + 1] - m[1][i],
@@ -169,14 +187,36 @@ VECTOR calculate_normal(MATRIX * matrix, int i){
   VECTOR b = generate_vector(m[0][i + 2] - m[0][i],
 			     m[1][i + 2] - m[1][i],
 			     m[2][i + 2] - m[2][i]);
-  VECTOR n = generate_vector((a[1] * b[2]) - (a[2] * b[1]),
-			     (a[2] * b[0]) - (a[0] * b[2]),
-			     (a[0] * b[1]) - (a[1] * b[0]));
+  VECTOR n = cross_product(a, b);
   free(a);
   free(b);
-  return n;
+  VECTOR v = normalized(n);
+  free(n);
+  return v;
+}
+VECTOR split_rgb(int rgb){
+  return generate_vector((rgb >> 16) &0x0ff, (rgb >> 8) &0x0ff, rgb &0x0ff);
 }
 
+LIGHT * generate_light(double x, double y, double z, int r, int g, int b){
+  LIGHT * l = malloc(sizeof(LIGHT));
+  VECTOR v = generate_vector(x, y, z);
+  l->vector = normalized(v);
+  free(v);
+  l->rgb = generate_vector(r, g, b);
+  l->next = NULL;
+  return l;
+}
+void add_light(ELEMENT * e, int x, int y, int z, int r, int g, int b){
+  LIGHT * l = generate_light(x, y, z, r, g, b);
+  l->next = e->lights;
+  e->lights = l;
+}
+void set_texture(ELEMENT * e, double ac, double dc, double sc){
+  e->ambient_const = ac;
+  e->diffuse_const = dc;
+  e->specular_const = sc;
+}
 
 ELEMENT * generate_element(int size, int color){
   ELEMENT *e = (ELEMENT *)malloc(sizeof(ELEMENT));
@@ -187,7 +227,43 @@ ELEMENT * generate_element(int size, int color){
   e->triangle_length = 0;
   e->next_element = NULL;
   e->children = NULL;
+  e->ambient_const = .2;
+  e->diffuse_const = .5;
+  e->specular_const = .5;
+  e->lights = NULL;
   return e;
+}
+int calculate_color(ELEMENT * e, VECTOR normal){
+  VECTOR viewpoint = generate_vector(0, 0, 1);
+  int color = e->color;
+  if(e->color == -2)
+    color = rgb(rand() % 256, rand() % 256, rand() % 256);
+
+  VECTOR col = split_rgb(color);
+  VECTOR rgb_vec = scale_vector(col, e->ambient_const);
+  //I = (A * Ka) + (P * Kd * (N̂ • L̂)) + (P * Kd * [(2N̂(N̂ • L̂) - L̂) • V̂]ⁿ)
+  LIGHT * light = e->lights;
+
+  while(light){
+    double d = dot_product(normal, light->vector);
+    VECTOR scaled = scale_vector(normal, d * 2);
+    VECTOR subtracted = subtract(scaled, light->vector);
+    for(int i = 0; i < 3; i++){
+      rgb_vec[i] += fmax(0, light->rgb[i] * e->diffuse_const * d) +
+	fmax(0, light->rgb[i] * e->specular_const * pow(dot_product(subtracted, viewpoint) , 4));
+    }
+    free(scaled);
+    free(subtracted);
+    light = light->next;
+  }
+  for(int i = 0; i < 3; i++){
+    rgb_vec[i] = fmin(255, rgb_vec[i]);
+    rgb_vec[i] = fmax(0, rgb_vec[i]);
+  }
+  int rgb_val = rgb(rgb_vec[0], rgb_vec[1], rgb_vec[2]);
+  free(col);
+  free(rgb_vec);
+  return rgb_val;
 }
 void add_col(ELEMENT  * e, int x, int y, int z, int polygon){
   MATRIX * M = polygon ? e->triangle_matrix : e->edge_matrix;
@@ -331,25 +407,27 @@ void plot_element(ELEMENT * e, GRID * g){
 	      color);
   }
   m = e->triangle_matrix;
+  VECTOR l = normalized(generate_vector(1, .5, 1));
   for(int c = 0; c < e->triangle_length; c += 3){
-    VECTOR n = calculate_normal(m, c);
-    //if(dot_product(viewpoint, n) >= 0){
-    if(1){
+    VECTOR n = calculate_surface_normal(m, c);
+    if(dot_product(viewpoint, n) >= 0){
+    //if(1){
       if(e->color == -2)
 	color = rgb(rand() % 256, rand() % 256, rand() % 256);
-      if(e->color != -1)
-	draw_triangle(e, g, c, color);
-      else
+      if(e->color != -1){
+	draw_triangle(e, g, c,  calculate_color(e, n));
+      }else{
 	color = rgb(0, 0, 0);
-      draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
-		(int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
-		color);
-      draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
-		(int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
-		color);
-      draw_line(g, (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
-		(int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
-		color);
+	draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
+		  (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
+		  color);
+	draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
+		  (int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
+		  color);
+	draw_line(g, (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
+		  (int)m->data[0][c + 2], (int)m->data[1][c + 2], m->data[2][c + 2],
+		  color);
+      }
     }
     free(n);
   }
@@ -843,7 +921,7 @@ ELEMENT * generate_sphere(double x, double y, double z, double r, int res){
   return e;
 }
 void sphere(ELEMENT * e, double x, double y, double z, double r){
-  int res = 20;
+  int res = 40;
   ELEMENT * s = generate_sphere(x, y, z, r, res);
   MATRIX * m = s->edge_matrix;
   for(int i = 0; i < s->length; i++){
@@ -887,7 +965,7 @@ ELEMENT * generate_torus(double x, double y, double z, double R, double r){
 void torus(ELEMENT * e, double x, double y, double z, double r, double R){
   ELEMENT * s = generate_torus(x, y, z, R, r);
   MATRIX * m = s->edge_matrix;
-  int res = 20;
+  int res = 40;
   for(int i = 0; i < s->length; i++){
     /* T - I
        | X |
@@ -946,4 +1024,3 @@ char *str_replace(char *orig, char *rep, char *with) {
   strcpy(tmp, orig);
   return result;
 }
-

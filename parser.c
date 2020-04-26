@@ -52,8 +52,8 @@ void trimleading(char *s){
 void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
-  enum command{Comment, Display, Push, Pop, End_For, For, Set, Srand, Color, Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save};
-  char * commands[] = {"comment", "display", "push", "pop", "end_for", "for", "set", "srand", "color", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save"};
+  enum command{Comment, Display, Push, Pop, End_For, For, Set, Srand, Color, Light, Texture,  Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save};
+  char * commands[] = {"comment", "display", "push", "pop", "end_for", "for", "set", "srand", "color", "light", "texture", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save"};
   FILE *f;
   char line[256];
   LOOP * loop_stack;
@@ -81,7 +81,7 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
       a[j++] = ptr;
       ptr = strtok (NULL, " ");
     }
-    for(int k = 0; k < 24; k++)
+    for(int k = 0; k < 26; k++)
       if(!strcmp(a[0], commands[k]) || (k == 0 && a[0] && a[0][0] == '#'))
 	c = k;
     if(c > 4){
@@ -166,6 +166,16 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
 	  set_color(e, atoi(args[0]));
 	else
 	  set_color(e, rgb(BUILD(args, 2)));
+	break;
+      case Light:
+	//Color defaults to white if no color specified
+	if(args[3])
+	  add_light(e, BUILD(args, 5));
+	else
+	  add_light(e, BUILD(args, 2), 255, 255, 255);
+	break;
+      case Texture:
+	set_texture(e, atof(args[0]), atof(args[1]), atof(args[2]));
 	break;
       case Line:
 	add_line(e, BUILD(args, 5));
