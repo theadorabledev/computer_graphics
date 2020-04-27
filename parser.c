@@ -49,7 +49,11 @@ void trimleading(char *s){
   s[j]='\0';
 }
 
-void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
+void parse_file (char * filename){
+  MATRIX * stack = generate_matrix(4, 4);
+  ident(stack);
+  ELEMENT * e = generate_element(40, 0);
+  GRID * s = generate_grid(500, 500);
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
   enum command{Comment, Display, Clear, Push, Pop, End_For, For, Set, Srand, Color, Light, Texture,  Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save, Gif};
@@ -278,14 +282,18 @@ void parse_file ( char * filename, MATRIX * stack, ELEMENT * e, GRID * s) {
     clear(e);
     c = -1;
   }
+  while(stack){
+    stack = pop_from_stack(stack);
+  }
+  free_grid(s);
+  free_matrix(transform);
+  free_element(e);
+  fclose(f);
 }
 
 int main(int argc, char *argv[]){
   srand(time(0));
-  MATRIX * t = generate_matrix(4, 4);
-  ident(t);
-  ELEMENT * e = generate_element(40, 0);
-  GRID * g = generate_grid(500, 500);
-  parse_file(argv[1], t, e, g);
+
+  parse_file(argv[1]);
   return 0;
 }

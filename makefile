@@ -45,4 +45,4 @@ clean:
 	rm -f *.ppm
 clobber:
 	@echo "Removing all binaries."
-	rm $(BINARIES)
+	rm -f $(BINARIES)

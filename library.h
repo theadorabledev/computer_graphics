@@ -46,9 +46,11 @@ typedef struct Element{
   double diffuse_const;
   double specular_const;
   LIGHT * lights;
+  VECTOR viewpoint;
 } ELEMENT;
 
 GRID * generate_grid(int width, int height);
+void free_grid(GRID * g);
 void plot(GRID * grid, int x, int y, double z, int rgb);
 void clear_grid(GRID * grid);
 int write_image(GRID * grid, char * filename);
@@ -66,6 +68,7 @@ void add_light(ELEMENT * e, int x, int y, int z, int r, int g, int b);
 void set_texture(ELEMENT * e, double ac, double dc, double sc);
 
 ELEMENT * generate_element(int size, int color);
+void free_element(ELEMENT * e);
 void add_line(ELEMENT * e, int x, int y, int z, int x2, int y2, int z2);
 void add_element(ELEMENT * list, ELEMENT * e);
 void add_child(ELEMENT * parent, ELEMENT * child);
