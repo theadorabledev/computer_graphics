@@ -1,7 +1,8 @@
 #include "library.h"
 GRID * generate_grid(int width, int height){
   GRID * m = malloc(sizeof(GRID));
-  int* values = calloc(width * height, sizeof(int));
+
+  int* values = calloc(width * height, sizeof(int));//Allows you to free the whole matrix/2d_array at once
   int** rows = malloc(height * sizeof(int*));
   for (int i=0; i<height; ++i){
     rows[i] = values + i * width;
@@ -10,15 +11,23 @@ GRID * generate_grid(int width, int height){
 
   double * z_vals = calloc(width * height, sizeof(double));
   double** z_rows = malloc(height * sizeof(double*));
+  memset(z_vals, -DBL_MAX, sizeof(double) * height * width);
   for (int i=0; i<height; ++i){
     z_rows[i] = z_vals + i * width;
-    memset(z_rows[i], -DBL_MAX, sizeof(double) * width);
   }
   m->z_buffer = z_rows;
-  //memset(z_rows, -DBL_MAX, sizeof(double) * width * height);
+
   m->width = width;
   m->height = height;
   return m;
+}
+void free_grid(GRID * g){
+  free(*g->data);
+  free(g->data);
+  free(*g->z_buffer);
+  free(g->z_buffer);
+
+  free(g);
 }
 void plot(GRID * grid, int x, int y, double z, int rgb){
   if (y < 0 || x < 0 || x >= grid->width || y >= grid->height)
@@ -207,6 +216,13 @@ LIGHT * generate_light(double x, double y, double z, int r, int g, int b){
   l->next = NULL;
   return l;
 }
+void free_light(LIGHT * l){
+  if(!l)
+    return;
+  free(l->vector);
+  free(l->rgb);
+  free(l);
+}
 void add_light(ELEMENT * e, int x, int y, int z, int r, int g, int b){
   LIGHT * l = generate_light(x, y, z, r, g, b);
   l->next = e->lights;
@@ -231,10 +247,23 @@ ELEMENT * generate_element(int size, int color){
   e->diffuse_const = .5;
   e->specular_const = .5;
   e->lights = NULL;
+  e->viewpoint = generate_vector(0, 0, 1);
   return e;
 }
+void free_element(ELEMENT * e){
+  free_matrix(e->edge_matrix);
+  free_matrix(e->triangle_matrix);
+  free(e->viewpoint);
+  LIGHT * l = e->lights;
+  while(l){
+    LIGHT * ln = l->next;
+    free_light(l);
+    l = ln;
+  }
+  free(e);
+}
 int calculate_color(ELEMENT * e, VECTOR normal){
-  VECTOR viewpoint = generate_vector(0, 0, 1);
+  VECTOR viewpoint = e->viewpoint;
   int color = e->color;
   if(e->color == -2)
     color = rgb(rand() % 256, rand() % 256, rand() % 256);
@@ -243,7 +272,6 @@ int calculate_color(ELEMENT * e, VECTOR normal){
   VECTOR rgb_vec = scale_vector(col, e->ambient_const);
   //I = (A * Ka) + (P * Kd * (N̂ • L̂)) + (P * Kd * [(2N̂(N̂ • L̂) - L̂) • V̂]ⁿ)
   LIGHT * light = e->lights;
-
   while(light){
     double d = dot_product(normal, light->vector);
     VECTOR scaled = scale_vector(normal, d * 2);
@@ -391,25 +419,21 @@ void draw_triangle(ELEMENT * e, GRID * g, int c, int color){
   }
 }
 void plot_element(ELEMENT * e, GRID * g){
-  VECTOR viewpoint = generate_vector(0, 0, 1);
   if(!e)
     return;
   MATRIX *m = e->edge_matrix;
   int color = e->color;// -1 => wireframe, -2 = random
   if(e->color == -2)
     color = rgb(rand() % 256, rand() % 256, rand() % 256);
-  //printf("%d\n" color);
   for(int c = 0; c < m->columns; c += 2){
     draw_line(g, (int)m->data[0][c], (int)m->data[1][c], m->data[2][c],
 	      (int)m->data[0][c + 1], (int)m->data[1][c + 1], m->data[2][c + 1],
 	      color);
   }
   m = e->triangle_matrix;
-  VECTOR l = normalized(generate_vector(1, .5, 1));
   for(int c = 0; c < e->triangle_length; c += 3){
     VECTOR n = calculate_surface_normal(m, c);
-    if(dot_product(viewpoint, n) >= 0){
-    //if(1){
+    if(dot_product(e->viewpoint, n) >= 0){
       if(e->color == -2)
 	color = rgb(rand() % 256, rand() % 256, rand() % 256);
       if(e->color != -1){
@@ -435,29 +459,23 @@ void plot_element(ELEMENT * e, GRID * g){
 }
 
 MATRIX * generate_matrix(int rows, int cols){
-  double **tmp;
-  int i;
-  MATRIX *m;
-  tmp = (double **)calloc(rows * sizeof(double *), 1);
-  for (i=0;i<rows;i++) {
-    tmp[i]=(double *)calloc(cols * sizeof(double), 1);
+  MATRIX *m = (MATRIX *)calloc(sizeof(MATRIX), 1);
+
+  double **data = calloc(rows * sizeof(double *), 1);
+  double * vals = calloc(rows * cols, sizeof(double));
+  for (int i = 0;i < rows; i++) {
+    data[i] = vals + (i * cols);
   }
-  m=(MATRIX *)calloc(sizeof(MATRIX), 1);
-  m->data=tmp;
+  m->data=data;
   m->rows = rows;
   m->columns = cols;
   m->last_col = 0;
   m->next = NULL;
   return m;
 }
-void free_matrix_data(MATRIX * m){
-  for (int i = 0; i < m->rows; i++) {
-    free(m->data[i]);
-  }
-  free(m->data);
-}
 void free_matrix(MATRIX * m){
-  free_matrix_data(m);
+  free(*m->data);
+  free(m->data);
   free(m);
 }
 void print_matrix(MATRIX * m){
@@ -472,15 +490,13 @@ void print_matrix(MATRIX * m){
 }
 void grow_matrix(MATRIX *m, int newcols){
   newcols = newcols + (newcols % 2);
-
+  double * old_data = *m->data;
+  double * new_data = calloc(newcols * m->rows, sizeof(double));
   for (int i = 0; i < m->rows; i++) {
-    double * d = calloc(newcols, sizeof(double));
-    memcpy(d, m->data[i], sizeof(double) * m->columns);
-    free(m->data[i]);
-    m->data[i] = d;
-    //m->data[i] = realloc(m->data[i], newcols*sizeof(double));
+    memcpy(new_data + (i * newcols), m->data[i], sizeof(double) * m->columns);
+    m->data[i] = new_data + (i * newcols);
   }
-
+  free(old_data);
   m->columns = newcols;
 }
 void copy_matrix(MATRIX * a, MATRIX * b){
@@ -497,7 +513,8 @@ void multiply(MATRIX * a, MATRIX * b){
       }
     }
   }
-  free_matrix_data(b);
+  free(*b->data);
+  free(b->data);
   b->rows = t->rows;
   b->columns = t->columns;
   b->last_col = t->last_col;
@@ -526,7 +543,6 @@ MATRIX * pop_from_stack(MATRIX * m){
 void transform_stack(MATRIX * m, MATRIX * t){
   multiply(m, t);
   copy_matrix(t, m);
-  //free(t);
 }
 
 double * generate_cone(int x, int y, int z, double theta, double phi, double inner_angle, int radius, int res){
@@ -716,7 +732,7 @@ void scale(MATRIX * m, double x, double y, double z){
   t->data[1][1] = y;
   t->data[2][2] = z;
   multiply(t, m);
-  free(t);
+  free_matrix(t);
 }
 void project(MATRIX * m, double d){
   MATRIX *t = generate_matrix(4, 4);
@@ -726,7 +742,7 @@ void project(MATRIX * m, double d){
   t->data[2][2] = 0;
   t->data[3][2] = - 1 / d;
   multiply(t, m);
-  free(t);
+  free_matrix(t);
 }
 void translate(MATRIX *m, double x, double y, double z){
   MATRIX *t = generate_matrix(4, 4);
@@ -735,7 +751,7 @@ void translate(MATRIX *m, double x, double y, double z){
   t->data[1][3] = y;
   t->data[2][3] = z;
   multiply(t, m);
-  free(t);
+  free_matrix(t);
 }
 void rotate_z_axis(MATRIX *m, double theta){
   MATRIX *t = generate_matrix(4, 4);
@@ -745,7 +761,7 @@ void rotate_z_axis(MATRIX *m, double theta){
   t->data[1][0] = sin(theta);
   t->data[1][1] = cos(theta);
   multiply(t, m);
-  free(t);
+  free_matrix(t);
 }
 void rotate_y_axis(MATRIX *m, double theta){
   MATRIX *t = generate_matrix(4, 4);
@@ -755,7 +771,7 @@ void rotate_y_axis(MATRIX *m, double theta){
   t->data[2][0] = -sin(theta);
   t->data[2][2] = cos(theta);
   multiply(t, m);
-  free(t);
+  free_matrix(t);
 }
 void rotate_x_axis(MATRIX *m, double theta){
   MATRIX *t = generate_matrix(4, 4);
@@ -765,7 +781,7 @@ void rotate_x_axis(MATRIX *m, double theta){
   t->data[2][1] = sin(theta);
   t->data[2][2] = cos(theta);
   multiply(t, m);
-  free(t);
+  free_matrix(t);
 }
 void rotate(MATRIX *m, double x_theta, double y_theta, double z_theta){
   rotate_x_axis(m, x_theta);
@@ -944,8 +960,7 @@ void sphere(ELEMENT * e, double x, double y, double z, double r){
 		   m->data[0][q], m->data[1][q], m->data[2][q],
 		   m->data[0][a], m->data[1][a], m->data[2][a]);
   }
-
-  free_matrix(m);
+  free_element(s);
 }
 
 ELEMENT * generate_torus(double x, double y, double z, double R, double r){
@@ -987,7 +1002,7 @@ void torus(ELEMENT * e, double x, double y, double z, double r, double R){
 		 m->data[0][a], m->data[1][a], m->data[2][a],
 		 m->data[0][t], m->data[1][t], m->data[2][t]);
   }
-  free_matrix(m);
+  free_element(s);
 }
 
 char *str_replace(char *orig, char *rep, char *with) {
