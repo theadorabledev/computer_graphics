@@ -67,4 +67,7 @@ map_bin
 parser
 picmaker
 
+# Emacs
+.emacs.desktop*
+
 
