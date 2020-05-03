@@ -5,6 +5,8 @@
 #include <limits.h>
 #include <float.h>
 #include <time.h>
+#ifndef LIBRARY_H
+#define LIBRARY_H
 #define SWAP(a,b,type) {type ttttttttt=a;a=b;b=ttttttttt;}
 #define PRINT_ARRAY(array, length){		\
     for(int flub = 0; flub < length; flub++)	\
@@ -42,9 +44,9 @@ typedef struct Element{
   int triangle_length;
   ELEMENT * next_element;
   ELEMENT * children;
-  double ambient_const;
-  double diffuse_const;
-  double specular_const;
+  VECTOR ambient_const;
+  VECTOR diffuse_const;
+  VECTOR specular_const;
   LIGHT * lights;
   VECTOR viewpoint;
 } ELEMENT;
@@ -64,8 +66,12 @@ int radians_to_degrees(double radians);
 
 #define M_PI 3.14159265358979323846
 
+LIGHT * generate_light(double x, double y, double z, int r, int g, int b);
 void add_light(ELEMENT * e, int x, int y, int z, int r, int g, int b);
 void set_texture(ELEMENT * e, double ac, double dc, double sc);
+void set_texture_rgb(ELEMENT * e, double ac_r, double ac_g, double ac_b,
+		     double dc_r, double dc_g, double dc_b,
+		     double sc_r, double sc_g, double sc_b);
 
 ELEMENT * generate_element(int size, int color);
 void free_element(ELEMENT * e);
@@ -111,3 +117,4 @@ void torus(ELEMENT * e, double x, double y, double z, double r, double R);
 
 char *str_replace(char *orig, char *rep, char *with);
 
+#endif

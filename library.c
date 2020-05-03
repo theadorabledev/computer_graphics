@@ -229,9 +229,21 @@ void add_light(ELEMENT * e, int x, int y, int z, int r, int g, int b){
   e->lights = l;
 }
 void set_texture(ELEMENT * e, double ac, double dc, double sc){
-  e->ambient_const = ac;
-  e->diffuse_const = dc;
-  e->specular_const = sc;
+  for(int i = 0; i < 3; i++){
+    e->ambient_const[i] = ac;
+    e->diffuse_const[i] = dc;
+    e->specular_const[i] = sc;
+  }
+}
+void set_texture_rgb(ELEMENT * e, double ac_r, double ac_g, double ac_b,
+		     double dc_r, double dc_g, double dc_b,
+		     double sc_r, double sc_g, double sc_b){
+  free(e->ambient_const);
+  e->ambient_const = generate_vector(ac_r, ac_g, ac_b);
+  free(e->diffuse_const);
+  e->diffuse_const = generate_vector(dc_r, dc_g, dc_b);
+  free(e->specular_const);
+  e->specular_const = generate_vector(sc_r, sc_g, sc_b);
 }
 
 ELEMENT * generate_element(int size, int color){
@@ -243,11 +255,12 @@ ELEMENT * generate_element(int size, int color){
   e->triangle_length = 0;
   e->next_element = NULL;
   e->children = NULL;
-  e->ambient_const = .2;
-  e->diffuse_const = .5;
-  e->specular_const = .5;
+  e->ambient_const = generate_vector(.2, .2, .2);
+  e->diffuse_const = generate_vector(.5, .5, .5);
+  e->specular_const = generate_vector(.5, .5, .5);
   e->lights = NULL;
   e->viewpoint = generate_vector(0, 0, 1);
+  //add_light(e, 0, 0, 1, 255, 255, 255);
   return e;
 }
 void free_element(ELEMENT * e){
@@ -269,7 +282,9 @@ int calculate_color(ELEMENT * e, VECTOR normal){
     color = rgb(rand() % 256, rand() % 256, rand() % 256);
 
   VECTOR col = split_rgb(color);
-  VECTOR rgb_vec = scale_vector(col, e->ambient_const);
+  VECTOR rgb_vec = generate_vector(col[0], col[1], col[2]);
+  for(int i = 0; i < 3; i++)
+    rgb_vec[i] *= e->ambient_const[i];
   //I = (A * Ka) + (P * Kd * (N̂ • L̂)) + (P * Kd * [(2N̂(N̂ • L̂) - L̂) • V̂]ⁿ)
   LIGHT * light = e->lights;
   while(light){
@@ -277,8 +292,8 @@ int calculate_color(ELEMENT * e, VECTOR normal){
     VECTOR scaled = scale_vector(normal, d * 2);
     VECTOR subtracted = subtract(scaled, light->vector);
     for(int i = 0; i < 3; i++){
-      rgb_vec[i] += fmax(0, light->rgb[i] * e->diffuse_const * d) +
-	fmax(0, light->rgb[i] * e->specular_const * pow(dot_product(subtracted, viewpoint) , 4));
+      rgb_vec[i] += fmax(0, light->rgb[i] * e->diffuse_const[i] * d) +
+	fmax(0, light->rgb[i] * e->specular_const[i] * pow(dot_product(subtracted, viewpoint) , 4));
     }
     free(scaled);
     free(subtracted);
