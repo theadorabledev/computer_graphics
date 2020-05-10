@@ -189,7 +189,10 @@ void parse_file (char * filename){
 	map_set(&m, args[0], strcpy(malloc(strlen(args[1])), args[1]));
 	break;
       case Srand:
-	srand(atoi(args[0]));
+	if(!atoi(args[0]))
+	  srand(time(NULL));
+	else
+	  srand(atoi(args[0]));
 	break;
       case Color:
 	if(atoi(args[0]) < 0)

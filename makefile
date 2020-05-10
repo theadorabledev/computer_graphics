@@ -65,9 +65,9 @@ clean:
 	rm -f *.o
 	rm -f *.ppm
 	@echo "Cleaning parser files."
-	# rm -f y.tab.c y.tab.h
-	# rm -f lex.yy.c
-	# rm -rf mdl_parser.dSYM
+	rm -f y.tab.c y.tab.h
+	rm -f lex.yy.c
+	rm -rf mdl_parser.dSYM
 clobber:
 	@echo "Removing all binaries."
 	rm -f $(BINARIES)
