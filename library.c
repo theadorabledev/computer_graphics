@@ -998,7 +998,7 @@ ELEMENT * generate_torus(double x, double y, double z, double R, double r){
 void torus(ELEMENT * e, double x, double y, double z, double r, double R){
   ELEMENT * s = generate_torus(x, y, z, R, r);
   MATRIX * m = s->edge_matrix;
-  int res = 40;
+  int res = 20;
   for(int i = 0; i < s->length; i++){
     /* T - I
        | X |
