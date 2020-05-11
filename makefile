@@ -47,7 +47,7 @@ symtab.o: mdl/symtab.c mdl/mdl_parser.h
 parser: parser.c map library
 	$(CC) -o parser parser.c map_bin library -lm
 run: picmaker line matrix parser bezier
-	$(RC) face.mdl
+	$(RC) simple_anim.mdl
 	#./parser tendril_script
 	#make convert
 	make clean
