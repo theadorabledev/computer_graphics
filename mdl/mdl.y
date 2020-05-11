@@ -788,7 +788,6 @@ int yywrap()
 
 extern FILE *yyin;
 
-
 int main(int argc, char **argv) {
 
   yyin = fopen(argv[1],"r");
@@ -796,18 +795,49 @@ int main(int argc, char **argv) {
   yyparse();
   print_symtab();
 
-  MATRIX * stack = generate_matrix(4, 4);
-  ident(stack);
+
   ELEMENT * e = generate_element(40, 0);
   e->color = rgb(50, 50, 50);
   add_light(e, 2, 1, 2, 255, 255, 255);
-  
+
   GRID * s = generate_grid(500, 500);
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
-  clear_grid(s);  
+  clear_grid(s);
+
+  int NUM_FRAMES = 1;
+  int NUM_VARS = 0;
+  char* THE_BASENAME = "pic";
   for(int i = 0; i < lastop; i++){
-    printf("%d %d\n", i, op[i].opcode);
+    switch(op[i].opcode){
+      case FRAMES:
+	NUM_FRAMES = op[i].op.frames.num_frames;
+	break;
+      case BASENAME:
+	THE_BASENAME = op[i].op. basename.p->name;
+	break;
+      case VARY:
+	set_value(op[i].op.vary.p, NUM_VARS++);
+	break;
+    }
+  }
+  double VARY_VALUES[NUM_VARS][NUM_FRAMES];
+  for(int i = 0; i < lastop; i++){
+    if(op[i].opcode == VARY){
+      int setting_val = (int)op[i].op.vary.p->s.value;
+      VARY_VALUES[setting_val][(int) op[i].op.vary.start_frame] = op[i].op.vary.start_val;
+      double inc = (op[i].op.vary.end_val - op[i].op.vary.start_val) /
+	(op[i].op.vary.end_frame - op[i].op.vary.start_frame);
+      for(int f = (int)op[i].op.vary.start_frame + 1; f <= (int)op[i].op.vary.end_frame; f++)
+	VARY_VALUES[setting_val][f] = VARY_VALUES[setting_val][f - 1] + inc;
+    }
+  }
+  for(int frame = 0; frame < NUM_FRAMES; frame++){
+    MATRIX * stack = generate_matrix(4, 4);
+    ident(stack);
+    ident(transform);
+    clear_grid(s);
+  for(int i = 0; i < lastop; i++){
     if((op[i].opcode == SPHERE || op[i].opcode == BOX || op[i].opcode == TORUS) && op[i].op.constants.p){
 	struct constants *c = op[i].op.constants.p->s.c;
 	set_texture_rgb(e, c->r[0], c->g[0], c->b[0],
@@ -815,19 +845,10 @@ int main(int argc, char **argv) {
 			c->r[2], c->g[2], c->b[2]);
     }
     switch(op[i].opcode){
-      case _LIGHT:
-	break;
-      case AMBIENT:
-	break;
-      case SAVE_COORDS:
-	break;
-      case CAMERA:
-	break;
       case SPHERE:
 	sphere(e, op[i].op.sphere.d[0],op[i].op.sphere.d[1],
 	       op[i].op.sphere.d[2],
 	       op[i].op.sphere.r);
-
 	break;
       case TORUS:
 	torus(e, op[i].op.torus.d[0],op[i].op.torus.d[1],
@@ -844,56 +865,42 @@ int main(int argc, char **argv) {
 	     op[i].op.line.p1[0],op[i].op.line.p1[1],
 	     op[i].op.line.p1[1]);
 	break;
-      case MESH:
-	break;
-      case SET:
-	break;
-      case MOVE:
-	translate(transform, op[i].op.move.d[0],op[i].op.move.d[1], op[i].op.move.d[2]);
+      case MOVE:{
+	double coef = op[i].op.move.p ? VARY_VALUES[(int) op[i].op.move.p->s.value][frame] : 1;
+	translate(transform, op[i].op.move.d[0] * coef, op[i].op.move.d[1] * coef, op[i].op.move.d[2] * coef);
 	transform_stack(stack, transform);
 	ident(transform);
 	break;
-      case SCALE:
-	translate(transform, op[i].op.scale.d[0],op[i].op.scale.d[1], op[i].op.scale.d[2]);
+      }
+      case SCALE:{
+	double coef = op[i].op.scale.p ? VARY_VALUES[(int) op[i].op.scale.p->s.value][frame] : 1;
+	scale(transform, op[i].op.scale.d[0] * coef,op[i].op.scale.d[1] * coef, op[i].op.scale.d[2] * coef);
 	transform_stack(stack, transform);
 	ident(transform);
-      case ROTATE:
-	printf("-----------------------------------------%d\n", (int) op[i].op.rotate.axis);
+	break;
+      }
+      case ROTATE:{
+	double coef = op[i].op.rotate.p ? VARY_VALUES[(int) op[i].op.rotate.p->s.value][frame] : 1;
 	switch((int) op[i].op.rotate.axis){
-	  case 0: rotate_x_axis(transform, op[i].op.rotate.degrees * M_PI / 180.0);
+	  case 0: rotate_x_axis(transform, op[i].op.rotate.degrees * coef * M_PI / 180.0);
 	    break;
-	  case 1: rotate_y_axis(transform, op[i].op.rotate.degrees * M_PI / 180.0);
+	  case 1: rotate_y_axis(transform, op[i].op.rotate.degrees * coef * M_PI / 180.0);
 	    break;
-	  case 2: rotate_z_axis(transform, op[i].op.rotate.degrees * M_PI / 180.0);
+	  case 2: rotate_z_axis(transform, op[i].op.rotate.degrees * coef * M_PI / 180.0);
 	    break;
 	}
 	transform_stack(stack, transform);
 	ident(transform);
 	break;
-      case BASENAME:
-	break;
-      case SAVE_KNOBS:
-	break;
-      case TWEEN:
-	break;
-      case FRAMES:
-	break;
+      }
       case PUSH:
 	stack = push_to_stack(stack);
 	break;
       case POP:
 	stack = pop_from_stack(stack);
 	break;
-      case GENERATE_RAYFILES:
-	break;
       case SAVE:
 	write_image(s, op[i].op.save.p->name);
-	break;
-      case SHADING:
-	break;
-      case SETKNOBS:
-	break;
-      case FOCAL:
 	break;
       case DISPLAY:
 	write_image(s, "temp.ppm");
@@ -904,9 +911,23 @@ int main(int argc, char **argv) {
     multiply(stack, e->triangle_matrix);
     plot_element(e, s);
     clear(e);
-    
   }
-  //my_main();
+  if(NUM_FRAMES > 1){
+    char buf[100];
+    sprintf(buf, "%03d_%s", frame, THE_BASENAME);
+    printf("%s\n", buf);
+    write_image(s, buf);
+  }
+  while(stack)
+    stack = pop_from_stack(stack);
+  }
+  if(NUM_FRAMES > 1){
+    char buf[100];
+    //printf("%s\n", BASENAME);
+    sprintf(buf, "convert -delay 10 -loop 0 *_%s %s.gif && rm *_%s", THE_BASENAME, THE_BASENAME, THE_BASENAME);
+    printf("%s\n", buf);
+    system(buf);
+  }
 
   return 0;
 }
