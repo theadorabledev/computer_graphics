@@ -837,89 +837,89 @@ int main(int argc, char **argv) {
     ident(stack);
     ident(transform);
     clear_grid(s);
-  for(int i = 0; i < lastop; i++){
-    if((op[i].opcode == SPHERE || op[i].opcode == BOX || op[i].opcode == TORUS) && op[i].op.constants.p){
+    for(int i = 0; i < lastop; i++){
+      if((op[i].opcode == SPHERE || op[i].opcode == BOX || op[i].opcode == TORUS) && op[i].op.constants.p){
 	struct constants *c = op[i].op.constants.p->s.c;
 	set_texture_rgb(e, c->r[0], c->g[0], c->b[0],
 			c->r[1], c->g[1], c->b[1],
 			c->r[2], c->g[2], c->b[2]);
-    }
-    switch(op[i].opcode){
-      case SPHERE:
-	sphere(e, op[i].op.sphere.d[0],op[i].op.sphere.d[1],
-	       op[i].op.sphere.d[2],
-	       op[i].op.sphere.r);
-	break;
-      case TORUS:
-	torus(e, op[i].op.torus.d[0],op[i].op.torus.d[1],
-	      op[i].op.torus.d[2],
-	      op[i].op.torus.r0,op[i].op.torus.r1);
-	break;
-      case BOX:
-	box(e, op[i].op.box.d0[0],op[i].op.box.d0[1], op[i].op.box.d0[2],
-	    op[i].op.box.d1[0],op[i].op.box.d1[1], op[i].op.box.d1[2]);
-	break;
-      case LINE:
-	add_line(e, op[i].op.line.p0[0],op[i].op.line.p0[1],
-	     op[i].op.line.p0[1],
-	     op[i].op.line.p1[0],op[i].op.line.p1[1],
-	     op[i].op.line.p1[1]);
-	break;
-      case MOVE:{
-	double coef = op[i].op.move.p ? VARY_VALUES[(int) op[i].op.move.p->s.value][frame] : 1;
-	translate(transform, op[i].op.move.d[0] * coef, op[i].op.move.d[1] * coef, op[i].op.move.d[2] * coef);
-	transform_stack(stack, transform);
-	ident(transform);
-	break;
       }
-      case SCALE:{
-	double coef = op[i].op.scale.p ? VARY_VALUES[(int) op[i].op.scale.p->s.value][frame] : 1;
-	scale(transform, op[i].op.scale.d[0] * coef,op[i].op.scale.d[1] * coef, op[i].op.scale.d[2] * coef);
-	transform_stack(stack, transform);
-	ident(transform);
-	break;
-      }
-      case ROTATE:{
-	double coef = op[i].op.rotate.p ? VARY_VALUES[(int) op[i].op.rotate.p->s.value][frame] : 1;
-	switch((int) op[i].op.rotate.axis){
-	  case 0: rotate_x_axis(transform, op[i].op.rotate.degrees * coef * M_PI / 180.0);
-	    break;
-	  case 1: rotate_y_axis(transform, op[i].op.rotate.degrees * coef * M_PI / 180.0);
-	    break;
-	  case 2: rotate_z_axis(transform, op[i].op.rotate.degrees * coef * M_PI / 180.0);
-	    break;
+      switch(op[i].opcode){
+	case SPHERE:
+	  sphere(e, op[i].op.sphere.d[0],op[i].op.sphere.d[1],
+		 op[i].op.sphere.d[2],
+		 op[i].op.sphere.r);
+	  break;
+	case TORUS:
+	  torus(e, op[i].op.torus.d[0],op[i].op.torus.d[1],
+		op[i].op.torus.d[2],
+		op[i].op.torus.r0,op[i].op.torus.r1);
+	  break;
+	case BOX:
+	  box(e, op[i].op.box.d0[0],op[i].op.box.d0[1], op[i].op.box.d0[2],
+	      op[i].op.box.d1[0],op[i].op.box.d1[1], op[i].op.box.d1[2]);
+	  break;
+	case LINE:
+	  add_line(e, op[i].op.line.p0[0],op[i].op.line.p0[1],
+		   op[i].op.line.p0[1],
+		   op[i].op.line.p1[0],op[i].op.line.p1[1],
+		   op[i].op.line.p1[1]);
+	  break;
+	case MOVE:{
+	  double coef = op[i].op.move.p ? VARY_VALUES[(int) op[i].op.move.p->s.value][frame] : 1;
+	  translate(transform, op[i].op.move.d[0] * coef, op[i].op.move.d[1] * coef, op[i].op.move.d[2] * coef);
+	  transform_stack(stack, transform);
+	  ident(transform);
+	  break;
 	}
-	transform_stack(stack, transform);
-	ident(transform);
-	break;
+	case SCALE:{
+	  double coef = op[i].op.scale.p ? VARY_VALUES[(int) op[i].op.scale.p->s.value][frame] : 1;
+	  scale(transform, op[i].op.scale.d[0] * coef,op[i].op.scale.d[1] * coef, op[i].op.scale.d[2] * coef);
+	  transform_stack(stack, transform);
+	  ident(transform);
+	  break;
+	}
+	case ROTATE:{
+	  double coef = op[i].op.rotate.p ? VARY_VALUES[(int) op[i].op.rotate.p->s.value][frame] : 1;
+	  switch((int) op[i].op.rotate.axis){
+	    case 0: rotate_x_axis(transform, op[i].op.rotate.degrees * coef * M_PI / 180.0);
+	      break;
+	    case 1: rotate_y_axis(transform, op[i].op.rotate.degrees * coef * M_PI / 180.0);
+	      break;
+	    case 2: rotate_z_axis(transform, op[i].op.rotate.degrees * coef * M_PI / 180.0);
+	      break;
+	  }
+	  transform_stack(stack, transform);
+	  ident(transform);
+	  break;
+	}
+	case PUSH:
+	  stack = push_to_stack(stack);
+	  break;
+	case POP:
+	  stack = pop_from_stack(stack);
+	  break;
+	case SAVE:
+	  write_image(s, op[i].op.save.p->name);
+	  break;
+	case DISPLAY:
+	  write_image(s, "temp.ppm");
+	  system("display temp.ppm");
+	  break;
       }
-      case PUSH:
-	stack = push_to_stack(stack);
-	break;
-      case POP:
-	stack = pop_from_stack(stack);
-	break;
-      case SAVE:
-	write_image(s, op[i].op.save.p->name);
-	break;
-      case DISPLAY:
-	write_image(s, "temp.ppm");
-	system("display temp.ppm");
-	break;
+      multiply(stack, e->edge_matrix);
+      multiply(stack, e->triangle_matrix);
+      plot_element(e, s);
+      clear(e);
     }
-    multiply(stack, e->edge_matrix);
-    multiply(stack, e->triangle_matrix);
-    plot_element(e, s);
-    clear(e);
-  }
-  if(NUM_FRAMES > 1){
-    char buf[100];
-    sprintf(buf, "%03d_%s", frame, THE_BASENAME);
-    printf("%s\n", buf);
-    write_image(s, buf);
-  }
-  while(stack)
-    stack = pop_from_stack(stack);
+    if(NUM_FRAMES > 1){
+      char buf[100];
+      sprintf(buf, "%03d_%s", frame, THE_BASENAME);
+      printf("%s\n", buf);
+      write_image(s, buf);
+    }
+    while(stack)
+      stack = pop_from_stack(stack);
   }
   if(NUM_FRAMES > 1){
     char buf[100];
