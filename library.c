@@ -567,7 +567,7 @@ double * generate_cone(int x, int y, int z, double theta, double phi, double inn
   //https://math.stackexchange.com/questions/643130/circle-on-sphere
   // radius is the length on the surface on the cone
   // returns  data in format{origin_x, origin_y, origin, z, center_x, center_y, center_z, x1, y1, z1, ..., xn, yn, zn
-  double * data = malloc(sizeof(double) * 3 * (res + 3));
+  double * data = calloc(sizeof(double) * 3 * (res + 3) + 1, 1);
   double origin[] = {(double) x, (double) y, (double) z};
   double midpoint[3]; //Center of the base of the cone
   get_point_polar_3d(origin, theta, phi, radius * cos(inner_angle / 2), midpoint);
@@ -739,8 +739,9 @@ void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,
 			  last_pos[p], last_pos[p + 1], last_pos[p + 2]);
       }
     }
-
   }
+  free(last_pos);
+  free(pos);
 }
 
 void scale(MATRIX * m, double x, double y, double z){
