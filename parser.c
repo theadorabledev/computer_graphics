@@ -132,6 +132,14 @@ char ** eval(map_str_t m, char * string){
 	sprintf(buf, "%d", rand() % atoi(args[i + 1]));
 	mod = 1;
 	inc = 1;
+      }else if(!strcmp(args[i], "sin")){
+	sprintf(buf, "%f", sin(degrees_to_radians(atoi(args[i + 1]))));
+	mod = 1;
+	inc = 1;
+      }else if(!strcmp(args[i], "cos")){
+	sprintf(buf, "%f", cos(degrees_to_radians(atoi(args[i + 1]))));
+	mod = 1;
+	inc = 1;
       }else{
 	bzero(buf, 50);
 	memcpy(buf, args[i], strlen(args[i]));
@@ -192,9 +200,9 @@ void parse_file (char * filename){
     if(c > 5){
 	args++;
     }
-    /* for(int i = 0; i < 10 && args[i]; i++) */
+    /* for(int i = 0 - (c > 5); i < MAX_ARGS && args[i]; i++) */
     /*   printf("%s | ", args[i]); */
-    /* printf("------- %d\n", c); */
+    /* printf("\n"); */
     switch(c){
       case Display:
 	if(args[1]){
@@ -216,14 +224,11 @@ void parse_file (char * filename){
 	stack = pop_from_stack(stack);
 	break;
       case End_For:{
-	printf("seriously bro---------------------------------\n");
 	char ** s = map_get(&m, loop_stack->var);
 	if(atoi(*s) >= loop_stack->end){
-	  printf("i'm sexy and i know it %s %d\n", *s, loop_stack->end);
 	  map_remove(&m, loop_stack->var);
 	  pop_loop(&loop_stack);
 	}else{
-	  printf("animal print pants outta control\n");
 	  sprintf(*s, "%d", atoi(*s) + loop_stack->inc);
 	  fseek(f, loop_stack->pos, SEEK_SET);
 	}
