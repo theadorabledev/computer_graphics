@@ -12,7 +12,7 @@
     for(int flub = 0; flub < length; flub++)	\
       printf("%f\t", *(array + flub));		\
     printf("\n");}
-#define STR_COPY(s) strcpy(malloc(strlen(s)), s)
+#define STR_COPY(s) strcpy(calloc(strlen(s) + 1, 1), s)
 
 typedef struct Matrix MATRIX;
 typedef struct Matrix{
