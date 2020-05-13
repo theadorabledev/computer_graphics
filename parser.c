@@ -14,6 +14,7 @@
 #define BUILD11(x) BUILD10(x), atoi(x[11])
 #define BUILD(x, i) BUILD##i(x)
 
+#define MAX_ARGS 12
 typedef struct loop LOOP;
 typedef struct loop{
   int pos;
@@ -49,6 +50,110 @@ void trimleading(char *s){
   s[j]='\0';
 }
 
+char ** eval(map_str_t m, char * string){
+  if(string[0] == '#')
+    return 0;
+  char * new_string = calloc(256 * sizeof(char), 1);
+  memcpy(new_string, string, strlen(string));
+  trimleading(new_string);
+
+  //Recursively evaluate items in parentheses
+  int p_start = 0;
+  int p_end = strlen(new_string);
+  int paren = 0;
+  int i = 0;
+  while(i < strlen(new_string)){
+    if(new_string[i] == '(' && (paren++ == 0)){
+      p_start = i + 1;
+    }
+    if(new_string[i] == ')' && (--paren == 0)){
+      p_end = i;
+      char *sub = calloc(sizeof(char) * (p_end - p_start + 2 + 1), 1);
+      strncpy(sub, new_string + p_start, p_end - p_start);
+      char ** real_res = eval(m, sub);
+      char *res = STR_COPY(real_res[0]);
+      strncpy(sub, new_string + p_start - 1, p_end - p_start + 2);
+      char *new = str_replace(new_string, sub, res);
+      free(new_string);
+      free(sub);
+      free(res);
+      for(int i = 0; i < MAX_ARGS; i++)
+	free(real_res[i]);
+      free(real_res);
+      new_string = new;
+      i = p_start;
+    }
+    i++;
+  }
+  char **args = calloc(MAX_ARGS * sizeof(char *), 1);
+  char *ptr = strtok(new_string, " ");
+  int j = 0;
+  //Tokenize the string and substitute variables with their values
+  while (ptr != NULL){
+    args[j++] = STR_COPY(ptr);
+    ptr = strtok(NULL, " ");
+  }
+  for(int i = 0; i < MAX_ARGS; i++){
+    if(args[i] && args[i][0] == '$'){
+      char **t = map_get(&m, args[i] + 1);
+      if(t){
+	free(args[i]);
+	args[i] = STR_COPY(*t);
+      }
+    }
+  }
+  //Perform the operations on the string
+  char ** new_args = calloc((MAX_ARGS + 1) * sizeof(char *), 1);
+  int p = 0;
+  for(int i = 0; i < MAX_ARGS; i++){
+    char buf[50];
+    int mod = 2;
+    int inc = 0;
+    if(args[i]){
+      if(args[i + 1] && !strcmp(args[i + 1], "+")){
+	sprintf(buf, "%f", atof(args[i]) + atof(args[i + 2]));
+      }else if(args[i + 1] && !strcmp(args[i + 1], "-")){
+	sprintf(buf, "%f", atof(args[i]) - atof(args[i + 2]));
+      }else if(args[i + 1] && !strcmp(args[i + 1], "*")){
+	sprintf(buf, "%f", atof(args[i]) * atof(args[i + 2]));
+      }else if(args[i + 1] && !strcmp(args[i + 1], "/")){
+	sprintf(buf, "%f", atof(args[i]) / atof(args[i + 2]));
+      }else if(args[i + 1] && !strcmp(args[i + 1], "%")){
+	sprintf(buf, "%d", atoi(args[i]) % atoi(args[i + 2]));
+      }else if(args[i + 1] && !strcmp(args[i + 1], "<")){
+	sprintf(buf, "%d", atoi(args[i]) < atoi(args[i + 2]));
+      }else if(args[i + 1] && !strcmp(args[i + 1], "<=")){
+	sprintf(buf, "%d", atoi(args[i]) <= atoi(args[i + 2]));
+      }else if(args[i + 1] && !strcmp(args[i + 1], ">")){
+	sprintf(buf, "%d", atoi(args[i]) > atoi(args[i + 2]));
+      }else if(args[i + 1] && !strcmp(args[i + 1], ">=")){
+	sprintf(buf, "%d", atoi(args[i]) >= atoi(args[i + 2]));
+      }else if(!strcmp(args[i], "rand")){
+	sprintf(buf, "%d", rand() % atoi(args[i + 1]));
+	mod = 1;
+	inc = 1;
+      }else{
+	bzero(buf, 50);
+	memcpy(buf, args[i], strlen(args[i]));
+	mod = 0;
+	inc = 0;
+      }
+      free(new_args[p]);
+      new_args[p++] = STR_COPY(buf);
+      if(args[i + mod])
+	free(args[i + mod]);
+      args[i + mod] = STR_COPY(buf);
+      i += inc;
+    }
+  }
+  free(new_string);
+  for(int i = 0; i < MAX_ARGS; i++){
+    if(args[i])
+      free(args[i]);
+  }
+  free(args);
+  return new_args;
+}
 void parse_file (char * filename){
   MATRIX * stack = generate_matrix(4, 4);
   ident(stack);
@@ -60,6 +165,7 @@ void parse_file (char * filename){
   char * commands[] = {"comment", "display", "clear", "push", "pop", "end_for", "for", "set", "srand", "color", "light", "texture", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save", "gif"};
   FILE *f;
   char line[256];
+  bzero(line, 256);
   LOOP * loop_stack;
   clear_grid(s);
   if ( strcmp(filename, "stdin") == 0 )
@@ -72,57 +178,24 @@ void parse_file (char * filename){
   map_init(&m);
 
   while(fgets(line, 255, f) != NULL) {
+
     trimleading(line);
     line[strlen(line)-1]='\0';
     if(!strlen(line))
       continue;
-    char *a[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    char **args = a;
-    char *ptr = strtok(line, " ");
-    int j = 0;
-    int one_line = 0;
-    while (ptr != NULL){
-      a[j++] = ptr;
-      ptr = strtok (NULL, " ");
-    }
+    char **args = eval(m, line);
+    if(!args)
+      continue;
     for(int k = 0; k < 28; k++)
-      if(!strcmp(a[0], commands[k]) || (k == 0 && a[0] && a[0][0] == '#'))
+      if(!strcmp(args[0], commands[k]) || (k == 0 && args[0] && args[0][0] == '#'))
 	c = k;
     if(c > 5){
-      if(a[1]){
-	one_line = 1;
 	args++;
-      }else{
-	fgets(line, 255, f);
-	trimleading(line);
-	line[strlen(line)-1]='\0';
-
-	while(!strlen(line)){
-	  fgets(line, 255, f);
-	  trimleading(line);
-	  line[strlen(line)-1]='\0';
-	}
-
-	ptr = strtok(line, " ");
-	j = 0;
-	while (ptr != NULL){
-	  a[j++] = ptr;
-	  ptr = strtok (NULL, " ");
-	}
-      }
-      for(int i = 0; i < 12; i++){
-	if(a[i] && a[i][0] == '$'){
-	  char **t = map_get(&m, a[i] + 1);
-	  a[i] = t ? *t : "0";
-	}
-      }
     }
     /* for(int i = 0; i < 10 && args[i]; i++) */
-    /*   printf("%s ", args[i]); */
+    /*   printf("%s | ", args[i]); */
     /* printf("------- %d\n", c); */
     switch(c){
-      case Comment:
-	break;
       case Display:
 	if(args[1]){
 	  char buf[30];
@@ -143,11 +216,14 @@ void parse_file (char * filename){
 	stack = pop_from_stack(stack);
 	break;
       case End_For:{
+	printf("seriously bro---------------------------------\n");
 	char ** s = map_get(&m, loop_stack->var);
 	if(atoi(*s) >= loop_stack->end){
+	  printf("i'm sexy and i know it %s %d\n", *s, loop_stack->end);
 	  map_remove(&m, loop_stack->var);
 	  pop_loop(&loop_stack);
 	}else{
+	  printf("animal print pants outta control\n");
 	  sprintf(*s, "%d", atoi(*s) + loop_stack->inc);
 	  fseek(f, loop_stack->pos, SEEK_SET);
 	}
@@ -175,19 +251,33 @@ void parse_file (char * filename){
 	//For var stop -> 0 stop 1
 	if(!args[3]){
 	  if(args[2]){
-	    args[3] = "1";
+	    free(args[3]);
+	    char * t = "1";
+	    args[3] = t;
 	  }else if(args[1]){
-	    args[2] = args[1];
-	    args[1] = "0";
-	    args[3] = "1";
+	    free(args[2]);
+	    args[2] = STR_COPY(args[1]);
+	    free(args[1]);
+	    char * t = "0";
+	    args[1] = STR_COPY(t);;
+	    free(args[3]);
+	    t = "1";
+	    args[3] = STR_COPY(t);;
 	  }
 	}
 	add_to_loop(&loop_stack, ftell(f), STR_COPY(args[0]), BUILD((args + 1), 2));
+	char **t = map_get(&m, args[0]);
+	if(t)
+	  free(*t);
 	map_set(&m, loop_stack->var, STR_COPY(args[1]));
 	break;
-      case Set:
-	map_set(&m, args[0], strcpy(malloc(strlen(args[1])), args[1]));
+      case Set:{
+	char **t = map_get(&m, args[0]);
+	if(t)
+	  free(*t);
+	map_set(&m, args[0], STR_COPY(args[1]));
 	break;
+      }
       case Srand:
 	if(!atoi(args[0]))
 	  srand(time(NULL));
@@ -224,7 +314,6 @@ void parse_file (char * filename){
 	bezier(e, positions, 3, .05);
 	break;
       }
-
       case Hermite:{
 	double data[] = {atoi(args[0]), atoi(args[1]), 0,
 			 atoi(args[2]), atoi(args[3]), 0,
@@ -283,6 +372,13 @@ void parse_file (char * filename){
     multiply(stack, e->triangle_matrix);
     plot_element(e, s);
     clear(e);
+    if(c > 5)
+      args--;
+    for(int i = 0; i < MAX_ARGS; i++)
+      if(args[i])
+	free(args[i]);
+    free(args);
+    bzero(line, 256);
     c = -1;
   }
   while(stack){
@@ -292,6 +388,7 @@ void parse_file (char * filename){
   free_matrix(transform);
   free_element(e);
   fclose(f);
+  map_deinit(&m);
 }
 
 int main(int argc, char *argv[]){

@@ -266,6 +266,9 @@ ELEMENT * generate_element(int size, int color){
 void free_element(ELEMENT * e){
   free_matrix(e->edge_matrix);
   free_matrix(e->triangle_matrix);
+  free(e->ambient_const);
+  free(e->diffuse_const);
+  free(e->specular_const);
   free(e->viewpoint);
   LIGHT * l = e->lights;
   while(l){
