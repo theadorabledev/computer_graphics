@@ -61,7 +61,7 @@ void draw_line_polar(GRID * grid, int x1, int y1, double r, double theta, int rg
 int rgb(int r, int g, int b);
 void get_point_polar(int x, int y, double theta, double r, int *xn, int *yn);
 double distance(int x1, int y1, int x2, int y2);
-double degrees_to_radians(int degrees);
+double degrees_to_radians(double degrees);
 int radians_to_degrees(double radians);
 
 #define M_PI 3.14159265358979323846
