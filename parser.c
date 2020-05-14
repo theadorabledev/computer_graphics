@@ -1,6 +1,6 @@
 #include "library.h"
 #include "map/src/map.h"
-#define BUILD0(x) atoi(x[0])
+#define BUILD0(x) atof(x[0])
 #define BUILD1(x) BUILD0(x), atoi(x[1])
 #define BUILD2(x) BUILD1(x), atoi(x[2])
 #define BUILD3(x) BUILD2(x), atoi(x[3])
@@ -14,7 +14,7 @@
 #define BUILD11(x) BUILD10(x), atoi(x[11])
 #define BUILD(x, i) BUILD##i(x)
 
-#define MAX_ARGS 12
+#define MAX_ARGS 256
 typedef struct loop LOOP;
 typedef struct loop{
   int pos;
@@ -53,10 +53,9 @@ void trimleading(char *s){
 char ** eval(map_str_t m, char * string){
   if(string[0] == '#')
     return 0;
-  char * new_string = calloc(256 * sizeof(char), 1);
+  char * new_string = calloc(1024 * sizeof(char), 1);
   memcpy(new_string, string, strlen(string));
   trimleading(new_string);
-
   //Recursively evaluate items in parentheses
   int p_start = 0;
   int p_end = strlen(new_string);
@@ -85,10 +84,10 @@ char ** eval(map_str_t m, char * string){
     }
     i++;
   }
+  //Tokenize the string and substitute variables with their values
   char **args = calloc(MAX_ARGS * sizeof(char *), 1);
   char *ptr = strtok(new_string, " ");
   int j = 0;
-  //Tokenize the string and substitute variables with their values
   while (ptr != NULL){
     args[j++] = STR_COPY(ptr);
     ptr = strtok(NULL, " ");
@@ -200,9 +199,9 @@ void parse_file (char * filename){
     if(c > 5){
 	args++;
     }
-    /* for(int i = 0 - (c > 5); i < MAX_ARGS && args[i]; i++) */
-    /*   printf("%s | ", args[i]); */
-    /* printf("\n"); */
+    for(int i = 0 - (c > 5); i < MAX_ARGS && args[i]; i++)
+      printf("%-12s |", args[i]);
+    printf("\n");
     switch(c){
       case Display:
 	if(args[1]){
@@ -229,7 +228,7 @@ void parse_file (char * filename){
 	  map_remove(&m, loop_stack->var);
 	  pop_loop(&loop_stack);
 	}else{
-	  sprintf(*s, "%d", atoi(*s) + loop_stack->inc);
+	  sprintf(*s, "%f", atof(*s) + loop_stack->inc);
 	  fseek(f, loop_stack->pos, SEEK_SET);
 	}
 	break;
@@ -246,7 +245,9 @@ void parse_file (char * filename){
       case Gif:{
 	char buf[100];
 	sprintf(buf, "convert -delay 10 -loop 0 *_%s %s && rm *_%s", args[0], args[1], args[0]);
-	printf("%s\n", buf);
+
+	system(buf);
+	sprintf(buf, "animate %s", args[1]);
 	system(buf);
 	break;
       }
@@ -284,7 +285,7 @@ void parse_file (char * filename){
 	break;
       }
       case Srand:
-	if(!atoi(args[0]))
+	if(!args[0])
 	  srand(time(NULL));
 	else
 	  srand(atoi(args[0]));
