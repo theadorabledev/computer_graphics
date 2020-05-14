@@ -451,7 +451,7 @@ void plot_element(ELEMENT * e, GRID * g){
   m = e->triangle_matrix;
   for(int c = 0; c < e->triangle_length; c += 3){
     VECTOR n = calculate_surface_normal(m, c);
-    if(dot_product(e->viewpoint, n) >= 0){
+    if(dot_product(e->viewpoint, n) > 0){
       if(e->color == -2)
 	color = rgb(rand() % 256, rand() % 256, rand() % 256);
       if(e->color != -1){
@@ -660,7 +660,7 @@ void flower(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance,	
     }
   }
 }
-void tendril(ELEMENT * e, int x, int y, int z, int theta, int phi, int variance, int length, int radius, int end, int res){
+void tendril(ELEMENT * e, int x, int y, int z, double theta, double phi, int variance, int length, int radius, int end, int res){
   //The different kinds of endings / tails these things can have
   enum tendril_end{Sphere, Cone, Tapered_Cone};
   //Some useful variables
