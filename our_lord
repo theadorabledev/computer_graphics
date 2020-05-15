@@ -2,7 +2,7 @@
 light 2 1 2
 srand 20
 
-for rot (360 + -360) 359 20
+for rot 0 359 10
     clear
     set green (127 + (64 * ((sin $rot) + 1)))
     srand 20
@@ -30,12 +30,16 @@ for rot (360 + -360) 359 20
 
 	texture 1 1 1
 	color 255 255 255
+	set r (rand 1024)
 	for s 15
+	    srand $r
+	    set r (rand 1024)
 	    set x ((200 * (cos (($s * 36) + $rot))) + ((rand 21) - 10))
 	    set y ((($s * 50) - 250) + ((rand 21) - 10))
 	    set z ((200 * (sin (($s * 36) + $rot))) + ((rand 21) - 10))
     	    sphere  $x $y $z 30
-	    flower $x $y $z 0 0 360 100 100 0
+	    srand
+	    flower $x $y $z 0 0 360 150 100 0
 	end_for
 
 	#THE TERRIBLE PULSATING BODY
