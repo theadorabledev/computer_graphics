@@ -15,31 +15,25 @@
 #define BUILD(x, i) BUILD##i(x)
 
 #define MAX_ARGS 256
-typedef struct loop LOOP;
-typedef struct loop{
-  int pos;
-  char * var;
-  int start;
-  int end;
-  int inc;
-  LOOP * next;
-} LOOP;
-void add_to_loop(LOOP ** loop, int pos, char * var, int start, int end, int inc){
-  LOOP * l = malloc(sizeof(LOOP));
-  l->pos = pos;
-  l->var = var;
-  l->start = start;
-  l->end = end - inc;
-  l->inc = inc;
-  l->next = *loop;
-  *loop = l;
-}
-void pop_loop(LOOP ** loop){
-  LOOP * l = (*loop)->next;
-  free((*loop)->var);
-  free(*loop);
-  *loop = l;
-}
+enum command{Comment, Display, Clear, Push, Pop, End_For, End_If, Else, If, For, Set, Srand, Color, Light, Texture,  Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save, Gif, Function};
+typedef struct command_struct COMMAND;
+typedef struct command_struct{
+  COMMAND * next_canon;//Next in terms of line placement in the file
+  COMMAND * next_true;//Next command to execute if this is true
+  COMMAND * next_false;//Next command to execute if this is false
+  COMMAND * parent;
+  map_str_t variables;
+  enum command  type;
+  char * args;
+} COMMAND;
+
+typedef struct stack STACK;
+typedef struct stack {
+  STACK * next;
+  COMMAND * command;
+  COMMAND * command_true_end;
+}STACK;
+
 void trimleading(char *s){
   int i,j;
   for(i=0; s[i]==' '||s[i]=='\t';i++);
@@ -49,8 +43,14 @@ void trimleading(char *s){
   }
   s[j]='\0';
 }
-
-char ** eval(map_str_t m, char * string){
+char ** get_variable_value(COMMAND * command, char * var){
+  if(map_get(&command->variables, var))
+    return map_get(&command->variables, var);
+  if(command->parent)
+    return get_variable_value(command->parent, var);
+  return NULL;
+}
+char ** eval(COMMAND * command, char * string){
   if(string[0] == '#')
     return 0;
   char * new_string = calloc(1024 * sizeof(char), 1);
@@ -69,7 +69,7 @@ char ** eval(map_str_t m, char * string){
       p_end = i;
       char *sub = calloc(sizeof(char) * (p_end - p_start + 2 + 1), 1);
       strncpy(sub, new_string + p_start, p_end - p_start);
-      char ** real_res = eval(m, sub);
+      char ** real_res = eval(command, sub);
       char *res = STR_COPY(real_res[0]);
       strncpy(sub, new_string + p_start - 1, p_end - p_start + 2);
       char *new = str_replace(new_string, sub, res);
@@ -92,9 +92,9 @@ char ** eval(map_str_t m, char * string){
     args[j++] = STR_COPY(ptr);
     ptr = strtok(NULL, " ");
   }
-  for(int i = 0; i < MAX_ARGS; i++){
+  for(int i = 0; i < MAX_ARGS && args[i]; i++){
     if(args[i] && args[i][0] == '$'){
-      char **t = map_get(&m, args[i] + 1);
+      char **t = get_variable_value(command, args[i] + 1);
       if(t){
 	free(args[i]);
 	args[i] = STR_COPY(*t);
@@ -161,48 +161,115 @@ char ** eval(map_str_t m, char * string){
   free(args);
   return new_args;
 }
-void parse_file (char * filename){
+STACK * stack_add(STACK * s, COMMAND * c){
+  STACK * new = calloc(sizeof(STACK), 1);
+  new->command = c;
+  new->next = s;
+  return new;
+}
+STACK * stack_pop(STACK * s){
+  STACK * new = s->next;
+  free(s);
+  return new;
+}
+COMMAND * generate_command(char * string, int type, COMMAND * parent){
+  COMMAND *c =  malloc(sizeof(COMMAND));
+  c->next_canon = NULL;
+  c->next_true = NULL;
+  c->next_false = NULL;
+  c->args = STR_COPY(string);
+  c->type = type;
+  c->parent = parent;
+  switch(type){
+    case Function:
+    case For:
+    case If:
+      map_init(&c->variables);
+  }
+  return c;
+}
+COMMAND *  parse_file(char * filename){
+
+  char * commands[] = {"comment", "display", "clear", "push", "pop", "end_for", "end_if", "else", "if", "for", "set", "srand", "color", "light", "texture", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save", "gif", "function"};
+  FILE *f;
+  char line[256];
+  bzero(line, 256);
+
+  if ( strcmp(filename, "stdin") == 0 )
+    f = stdin;
+  else
+    f = fopen(filename, "r");
+  map_str_t m;
+  map_init(&m);
+  COMMAND * last = generate_command("main", Function, NULL);
+  COMMAND * main = last;
+  STACK * stack = stack_add(NULL, main);
+  while(fgets(line, 255, f) != NULL){
+    trimleading(line);
+    line[strlen(line)-1]='\0';
+    if(!strlen(line))
+      continue;
+    if(line[0] == '#')
+	continue;
+    for(int c = 0; c < 32; c++){
+      if(!strncmp(line, commands[c], strlen(commands[c]))){
+	COMMAND * command = generate_command(line, c, stack->command);
+	if(last)
+	  last->next_canon = command;
+	switch(c){
+	  case If:
+	  case For:
+	    stack = stack_add(stack, command);
+	    last->next_true = command;
+	    break;
+	  case Else:
+	    stack->command->next_false = command;
+	    stack->command_true_end = last;
+	    break;
+	  case End_If:
+	    last->next_true = command;
+	    stack->command_true_end->next_true = command;
+	    stack = stack_pop(stack);
+	    break;
+	  case End_For:
+	    stack->command->next_false = command;
+	    last->next_true = stack->command;
+	    stack = stack_pop(stack);
+	    break;
+	  default:
+	    if(last)
+	      last->next_true = command;
+	}
+	last = command;
+	break;
+      }
+    }
+  }
+  fclose(f);
+  return main;
+}
+
+void execute_commands (COMMAND * func){
   MATRIX * stack = generate_matrix(4, 4);
   ident(stack);
   ELEMENT * e = generate_element(40, 0);
   GRID * s = generate_grid(500, 500);
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
-  enum command{Comment, Display, Clear, Push, Pop, End_For, For, Set, Srand, Color, Light, Texture,  Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save, Gif};
-  char * commands[] = {"comment", "display", "clear", "push", "pop", "end_for", "for", "set", "srand", "color", "light", "texture", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save", "gif"};
-  FILE *f;
-  char line[256];
-  bzero(line, 256);
-  LOOP * loop_stack;
-  clear_grid(s);
-  if ( strcmp(filename, "stdin") == 0 )
-    f = stdin;
-  else
-    f = fopen(filename, "r");
-  enum command c = -1;
-
   map_str_t m;
   map_init(&m);
+  while(func){
+    char **args = eval(func, func->args);
 
-  while(fgets(line, 255, f) != NULL) {
-
-    trimleading(line);
-    line[strlen(line)-1]='\0';
-    if(!strlen(line))
-      continue;
-    char **args = eval(m, line);
-    if(!args)
-      continue;
-    for(int k = 0; k < 28; k++)
-      if(!strcmp(args[0], commands[k]) || (k == 0 && args[0] && args[0][0] == '#'))
-	c = k;
-    if(c > 5){
+    if(func->type > 5){
 	args++;
     }
-    for(int i = 0 - (c > 5); i < MAX_ARGS && args[i]; i++)
+    int end_true = 1;
+    printf("%s\n", func->args);
+    for(int i = 0 - (func->type > 5); i < MAX_ARGS && args[i]; i++)
       printf("%-12s |", args[i]);
     printf("\n");
-    switch(c){
+    switch(func->type){
       case Display:
 	if(args[1]){
 	  char buf[30];
@@ -223,14 +290,8 @@ void parse_file (char * filename){
 	stack = pop_from_stack(stack);
 	break;
       case End_For:{
-	char ** s = map_get(&m, loop_stack->var);
-	if(atoi(*s) >= loop_stack->end){
-	  map_remove(&m, loop_stack->var);
-	  pop_loop(&loop_stack);
-	}else{
-	  sprintf(*s, "%f", atof(*s) + loop_stack->inc);
-	  fseek(f, loop_stack->pos, SEEK_SET);
-	}
+	map_deinit(&func->variables);
+	map_init(&func->variables);
 	break;
       }
       case Save:{
@@ -271,17 +332,33 @@ void parse_file (char * filename){
 	    args[3] = STR_COPY(t);;
 	  }
 	}
-	add_to_loop(&loop_stack, ftell(f), STR_COPY(args[0]), BUILD((args + 1), 2));
-	char **t = map_get(&m, args[0]);
-	if(t)
+
+	char **t = get_variable_value(func, args[0]);
+	int t_set = 0;
+	if(!t){
+	  map_set(&func->variables, STR_COPY(args[0]), STR_COPY(args[1]));
+	  t_set = 1;
+	  t = get_variable_value(func, args[0]);
+	}
+	if(!t_set){
+	  char new[100];
+	  bzero(new, 100);
+	  sprintf(new, "%f", atof(*t) + atof(args[3]));
 	  free(*t);
-	map_set(&m, loop_stack->var, STR_COPY(args[1]));
+	  *t = STR_COPY(new);
+	}
+	if(atof(*t) >= atof(args[2])){
+	  end_true = 0;
+	  free(*t);
+	  map_remove(&func->variables, args[0]);
+	  break;
+	}
 	break;
       case Set:{
-	char **t = map_get(&m, args[0]);
+	char **t = map_get(&func->parent->variables, args[0]);
 	if(t)
 	  free(*t);
-	map_set(&m, args[0], STR_COPY(args[1]));
+	map_set(&func->parent->variables, args[0], STR_COPY(args[1]));
 	break;
       }
       case Srand:
@@ -378,28 +455,33 @@ void parse_file (char * filename){
     multiply(stack, e->triangle_matrix);
     plot_element(e, s);
     clear(e);
-    if(c > 5)
+    if(func->type > 5)
       args--;
     for(int i = 0; i < MAX_ARGS; i++)
       if(args[i])
 	free(args[i]);
     free(args);
-    bzero(line, 256);
-    c = -1;
-  }
-  while(stack){
-    stack = pop_from_stack(stack);
+    if(end_true)
+      func = func->next_true;
+    else
+      func = func->next_false;
   }
   free_grid(s);
   free_matrix(transform);
   free_element(e);
-  fclose(f);
   map_deinit(&m);
 }
-
 int main(int argc, char *argv[]){
   srand(time(0));
 
-  parse_file(argv[1]);
+  COMMAND * main = parse_file(argv[1]);
+  execute_commands(main);
+  while(main){
+    COMMAND * n = main->next_canon;
+    free(main->args);
+    map_deinit(&main->variables);
+    free(main);
+    main = n;
+  }
   return 0;
 }
