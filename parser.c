@@ -18,6 +18,7 @@
 enum command{Comment, Display, Clear, Push, Pop, End_For, End_If, Else, If, For, Set, Srand, Color, Light, Texture,  Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save, Gif, Function};
 typedef struct command_struct COMMAND;
 typedef struct command_struct{
+  int pos;
   COMMAND * next_canon;//Next in terms of line placement in the file
   COMMAND * next_true;//Next command to execute if this is true
   COMMAND * next_false;//Next command to execute if this is false
@@ -193,13 +194,14 @@ COMMAND *  parse_file(char * filename){
   FILE *f;
   char line[256];
   bzero(line, 256);
-
   if ( strcmp(filename, "stdin") == 0 )
     f = stdin;
   else
     f = fopen(filename, "r");
+  int pos = 0;
   COMMAND * last = generate_command("main", Function, NULL);
   COMMAND * main = last;
+  main->pos = pos++;
   STACK * stack = stack_add(NULL, main);
   while(fgets(line, 255, f) != NULL){
     trimleading(line);
@@ -211,8 +213,10 @@ COMMAND *  parse_file(char * filename){
     for(int c = 0; c < 32; c++){
       if(!strncmp(line, commands[c], strlen(commands[c]))){
 	COMMAND * command = generate_command(line, c, stack->command);
-	if(last)
+	if(last){
 	  last->next_canon = command;
+	  command->pos = pos++;
+	}
 	switch(c){
 	  case If:
 	  case For:
@@ -244,6 +248,16 @@ COMMAND *  parse_file(char * filename){
   }
   stack_pop(stack);
   fclose(f);
+  COMMAND * n = main;
+  while(n){
+    printf("(%-3d) %-20.20s |", n->pos, n->args);
+    if(n->next_true)
+      printf("(%-3d) %-20.20s |", n->next_true->pos, n->next_true->args);
+    if(n->next_false)
+      printf("(%-3d) %-20.20s |", n->next_false->pos, n->next_false->args);
+    printf("\n");
+    n = n->next_canon;
+  }
   return main;
 }
 void map_clean(map_str_t m){
@@ -266,12 +280,11 @@ void execute_commands (COMMAND * func){
   ident(transform);
   while(func){
     char **args = eval(func, func->args);
-
     if(func->type > 5){
 	args++;
     }
     int end_true = 1;
-    printf("%s\n", func->args);
+    printf("(%-3d) |", func->pos);
     for(int i = 0 - (func->type > 5); i < MAX_ARGS && args[i]; i++)
       printf("%-12s |", args[i]);
     printf("\n");
@@ -310,7 +323,6 @@ void execute_commands (COMMAND * func){
       case Gif:{
 	char buf[100];
 	sprintf(buf, "convert -delay 10 -loop 0 *_%s %s && rm *_%s", args[0], args[1], args[0]);
-
 	system(buf);
 	sprintf(buf, "animate %s", args[1]);
 	system(buf);
@@ -336,7 +348,6 @@ void execute_commands (COMMAND * func){
 	    args[3] = STR_COPY(t);;
 	  }
 	}
-
 	char **t = get_variable_value(func, args[0]);
 	int t_set = 0;
 	if(!t){
@@ -354,6 +365,7 @@ void execute_commands (COMMAND * func){
 	if(atof(*t) >= atof(args[2])){
 	  end_true = 0;
 	  map_clean(func->variables);
+	  map_init(&func->variables);
 	}
 	break;
       case Set:{
