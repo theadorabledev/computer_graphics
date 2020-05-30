@@ -173,7 +173,7 @@ STACK * stack_pop(STACK * s){
   return new;
 }
 COMMAND * generate_command(char * string, int type, COMMAND * parent){
-  COMMAND *c =  malloc(sizeof(COMMAND));
+  COMMAND *c =  calloc(sizeof(COMMAND), 1);
   c->next_canon = NULL;
   c->next_true = NULL;
   c->next_false = NULL;
@@ -189,7 +189,6 @@ COMMAND * generate_command(char * string, int type, COMMAND * parent){
   return c;
 }
 COMMAND *  parse_file(char * filename){
-
   char * commands[] = {"comment", "display", "clear", "push", "pop", "end_for", "end_if", "else", "if", "for", "set", "srand", "color", "light", "texture", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save", "gif", "function"};
   FILE *f;
   char line[256];
@@ -199,8 +198,6 @@ COMMAND *  parse_file(char * filename){
     f = stdin;
   else
     f = fopen(filename, "r");
-  map_str_t m;
-  map_init(&m);
   COMMAND * last = generate_command("main", Function, NULL);
   COMMAND * main = last;
   STACK * stack = stack_add(NULL, main);
@@ -245,10 +242,21 @@ COMMAND *  parse_file(char * filename){
       }
     }
   }
+  stack_pop(stack);
   fclose(f);
   return main;
 }
-
+void map_clean(map_str_t m){
+  char *key;
+  map_iter_t iter = map_iter(&m);
+  while (key = map_next(&m, &iter)){
+    if(key){
+      char * res = *map_get(&m, key);
+      free(res);
+    }
+  }
+  map_deinit(&m);
+}
 void execute_commands (COMMAND * func){
   MATRIX * stack = generate_matrix(4, 4);
   ident(stack);
@@ -256,8 +264,6 @@ void execute_commands (COMMAND * func){
   GRID * s = generate_grid(500, 500);
   MATRIX * transform = generate_matrix(4, 4);
   ident(transform);
-  map_str_t m;
-  map_init(&m);
   while(func){
     char **args = eval(func, func->args);
 
@@ -290,8 +296,6 @@ void execute_commands (COMMAND * func){
 	stack = pop_from_stack(stack);
 	break;
       case End_For:{
-	map_deinit(&func->variables);
-	map_init(&func->variables);
 	break;
       }
       case Save:{
@@ -336,7 +340,7 @@ void execute_commands (COMMAND * func){
 	char **t = get_variable_value(func, args[0]);
 	int t_set = 0;
 	if(!t){
-	  map_set(&func->variables, STR_COPY(args[0]), STR_COPY(args[1]));
+	  map_set(&func->variables, args[0], STR_COPY(args[1]));
 	  t_set = 1;
 	  t = get_variable_value(func, args[0]);
 	}
@@ -349,16 +353,17 @@ void execute_commands (COMMAND * func){
 	}
 	if(atof(*t) >= atof(args[2])){
 	  end_true = 0;
-	  free(*t);
-	  map_remove(&func->variables, args[0]);
-	  break;
+	  map_clean(func->variables);
 	}
 	break;
       case Set:{
 	char **t = map_get(&func->parent->variables, args[0]);
-	if(t)
+	if(t){
 	  free(*t);
-	map_set(&func->parent->variables, args[0], STR_COPY(args[1]));
+	  *t = STR_COPY(args[1]);
+	}else{
+	  map_set(&func->parent->variables, args[0], STR_COPY(args[1]));
+	}
 	break;
       }
       case Srand:
@@ -466,22 +471,24 @@ void execute_commands (COMMAND * func){
     else
       func = func->next_false;
   }
+  while(stack)
+    stack = pop_from_stack(stack);
   free_grid(s);
   free_matrix(transform);
   free_element(e);
-  map_deinit(&m);
 }
 int main(int argc, char *argv[]){
   srand(time(0));
 
   COMMAND * main = parse_file(argv[1]);
   execute_commands(main);
+  int i = 0;
   while(main){
     COMMAND * n = main->next_canon;
     free(main->args);
-    map_deinit(&main->variables);
     free(main);
     main = n;
+    i ++;
   }
   return 0;
 }
