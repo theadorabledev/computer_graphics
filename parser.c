@@ -33,6 +33,7 @@ typedef struct stack {
   STACK * next;
   COMMAND * command;
   COMMAND * command_true_end;
+  COMMAND * command_false_end;
 }STACK;
 
 void trimleading(char *s){
@@ -128,6 +129,10 @@ char ** eval(COMMAND * command, char * string){
 	sprintf(buf, "%d", atoi(args[i]) > atoi(args[i + 2]));
       }else if(args[i + 1] && !strcmp(args[i + 1], ">=")){
 	sprintf(buf, "%d", atoi(args[i]) >= atoi(args[i + 2]));
+      }else if(args[i + 1] && !strcmp(args[i + 1], "&&")){
+	sprintf(buf, "%d", atof(args[i]) && atof(args[i + 2]));
+      }else if(args[i + 1] && !strcmp(args[i + 1], "||")){
+	sprintf(buf, "%d", atof(args[i]) || atof(args[i + 2]));
       }else if(!strcmp(args[i], "rand")){
 	sprintf(buf, "%d", rand() % atoi(args[i + 1]));
 	mod = 1;
@@ -174,7 +179,7 @@ STACK * stack_pop(STACK * s){
   return new;
 }
 COMMAND * generate_command(char * string, int type, COMMAND * parent){
-  COMMAND *c =  calloc(sizeof(COMMAND), 1);
+  COMMAND *c = calloc(sizeof(COMMAND), 1);
   c->next_canon = NULL;
   c->next_true = NULL;
   c->next_false = NULL;
@@ -184,7 +189,6 @@ COMMAND * generate_command(char * string, int type, COMMAND * parent){
   switch(type){
     case Function:
     case For:
-    case If:
       map_init(&c->variables);
   }
   return c;
@@ -224,12 +228,17 @@ COMMAND *  parse_file(char * filename){
 	    last->next_true = command;
 	    break;
 	  case Else:
+	    //last->next_true = ;
+	    //stack->command_true_end = last;
 	    stack->command->next_false = command;
 	    stack->command_true_end = last;
 	    break;
 	  case End_If:
+	    //printf("%d %d %d", last->next_true->pos, stack->command_true_end->pos, 0);
 	    last->next_true = command;
-	    stack->command_true_end->next_true = command;
+	    if(stack->command_true_end)
+	      stack->command_true_end->next_true = command;
+	    //stack->command_true_end->next_true = command;
 	    stack = stack_pop(stack);
 	    break;
 	  case End_For:
@@ -258,6 +267,7 @@ COMMAND *  parse_file(char * filename){
     printf("\n");
     n = n->next_canon;
   }
+  //return NULL;
   return main;
 }
 void map_clean(map_str_t m){
@@ -368,8 +378,12 @@ void execute_commands (COMMAND * func){
 	  map_init(&func->variables);
 	}
 	break;
+      case If:
+	if(args[0][0] == '0')
+	  end_true = 0;
+	break;
       case Set:{
-	char **t = map_get(&func->parent->variables, args[0]);
+	char **t = get_variable_value(func, args[0]);
 	if(t){
 	  free(*t);
 	  *t = STR_COPY(args[1]);
