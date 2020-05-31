@@ -1,143 +1,181 @@
 #theadorabledev.github.io
-light 2 1 2
-srand 20
 
-for rot 0 359 10
-    clear
-    set green (127 + (64 * ((sin $rot) + 1)))
-    srand 20
-
-    #AND IF YOU GAZE FOR LONG INTO AN ABYSS, THE ABYSS GAZES ALSO INTO YOU
+function make_background rot
     texture 0 0 0
     color 0 0 0
     box 0 500 -500 500 500 100
-
     #THE HOLY STARS IN THE COSMOS
     push
 	move 250 250 0
-	set fac (1.2 + ( .2 * (sin $rot))) 
+	set fac (1.2 + ( .2 * (sin $rot)))
 	scale $fac $fac 1
 	rotate z $rot
 	color 255 255 255
-    	speckle -400 -400 -100 800 800 1 1 2 0
+	speckle -400 -400 -100 800 800 1 1 2 0
     pop
+end_function
 
-    #BODY
-    push
-	move (250 + (50 * (cos $rot))) (200 + (50 * (sin $rot))) 0
+function orb_mama rot
+    texture 1 1 1
+    color 255 255 255
+    set r (rand 1024)
+    for s 15
+        srand $r
+        set r (rand 1024)
+        set x ((200 * (cos (($s * 36) + $rot))) + ((rand 21) - 10))
+        set y ((($s * 50) - 250) + ((rand 21) - 10))
+        set z ((200 * (sin (($s * 36) + $rot))) + ((rand 21) - 10))
+        sphere  $x $y $z 30
+        srand
+        flower $x $y $z 0 0 360 150 100 0
+    end_for
+end_function
 
-	#ORB MAMA!
-
-	texture 1 1 1
-	color 255 255 255
-	set r (rand 1024)
-	for s 15
-	    srand $r
-	    set r (rand 1024)
-	    set x ((200 * (cos (($s * 36) + $rot))) + ((rand 21) - 10))
-	    set y ((($s * 50) - 250) + ((rand 21) - 10))
-	    set z ((200 * (sin (($s * 36) + $rot))) + ((rand 21) - 10))
-    	    sphere  $x $y $z 30
-	    srand
-	    flower $x $y $z 0 0 360 150 100 0
-	end_for
-
-	#THE TERRIBLE PULSATING BODY
-	srand 20
+function eyestalks rot green
+    texture 0 0 1
+    color 0 0 0
+    for y -1 2 2
     	texture .2 .2 .5
-    	rotate y (90 + (45 * (sin $rot)))
+	push
+	rotate y ((20 * $y) + ((10* $y) * (cos $rot)))
+	rotate z (75 + (10 * (sin $rot)))
 	color 0 $green 0
-	for x 5 15 1
-	    torus 0 (150 - ($x * 5)) 0 5 ((((30 + (25 * ((sin $rot) + 1))) + (rand 10)) / 15) * $x)
+	for i 17
+	    torus 0 (51 + (5 * $i)) 0 3 (10 + (5 * (sin (($i * 36) + $rot))))
 	end_for
-	for i 0 180 10
-	    torus 0 ((75 - $i) % -250) 0 5 ((30 + (25 * ((sin (($i * 4) + $rot)) + 1))) + (rand 10))
+	for i 5
+	    torus 0 (130 + (4 * $i)) 0 2 ($i * 5)
 	end_for
-	for x 10
-	    torus 0 (-145 + ($x * 5)) 0 5 ((((30 + (25 * ((sin ((170 * 4) + $rot)) + 1))) + (rand 10)) / 10) * $x)
-	end_for
-    
-	#WHAT CAN ONLY BE DESCRIBED AS THE HEAD
-	color 0 $green 0
-    	push
-    	    move 0 175 0
-    	    sphere 0 0 0 50
-
-    	    #EYESTALKS AND EYES
-	    texture 0 0 1
-    	    color 0 0 0
-	    for y -1 2 2
-		texture .2 .2 .5
-		push
-		    rotate y ((20 * $y) + ((10* $y) * (cos $rot)))
-		    rotate z (75 + (10 * (sin $rot)))
-		    color 0 $green 0
-		    for i 17
-		    	torus 0 (51 + (5 * $i)) 0 3 (10 + (5 * (sin (($i * 36) + $rot))))
-		    end_for
-		    for i 5
-		    	torus 0 (130 + (4 * $i)) 0 2 ($i * 5)
-		    end_for
-		    color 255 0 0
-		    texture .2 1 1
-		    sphere 0 150 0 15
-	    	pop
-	    end_for
-	    
-	    #A PULSATING SET OF TONGUES
-	    srand
-	    texture .2 .2 .5
-	    push
-	        color 200 122 200
-		texture .2 .2 1
-		rotate z (120 + (15 * (sin ($rot * 2))))
-		for i 20
-		    torus 0 (51 + (5 * $i)) 0 3 (10 + (5 * (sin (($i * 36) + $rot))))
-		end_for
-		texture .2 .2 1
-	        for i 7
-	       	    tendril 0 90 0 270 270 20 10 8 0 20
-	        end_for
-	    pop
-	    
-	    #THE DIVINITY OF THE HALO
-	    texture .2 .2 3
-	    color 212 175 55 #gold
-	    push
-		move 0 (((sin ($rot * 2)) + 1) * 10) 0
-		rotate y -90
-		rotate x -20
-		torus 0 50 0 5 60
-	    pop
-    	pop
-	
-	#BLESSED BE THY NOODLY APPENDAGES
-	texture .2 .2 .5
-	color 0 $green 0
-	srand 20
-	for tendies 40
-	    set r (rand 1024)
-	    set height (90 - (rand 170))
-	    set theta (-15 + (rand 31))
-	    set phi ((360 / 40) * $tendies)
-	    set len (5 + (rand 15))
-	    set rad (5 + (rand 5))
-	    srand
-	    tendril 0 $height 0 $theta $phi 15 $len $rad (rand 3) 20
-	    srand $r
-	end_for
-
-	#RED HAIRs UPON THE FORM
-	srand 20
 	color 255 0 0
-	for flowies 0 180 10
-	    set height (90 - (rand 200))
-	    set height (75 - $flowies)
-	    set width ((20 + (25 * ((sin (($height * 3) + $rot)) + 1))) + (rand 10))
-	    flower 0 $height 0 (-2 + (rand 4)) (rand 360) 10 ($width / 2) 10 0
-	end_for
-    pop
-    save savior.ppm $rot
-end_for
+	texture .2 1 1
+	sphere 0 150 0 15
+        pop
+    end_for
+end_function
 
-gif savior.ppm robot.gif
+function tongues rot
+    srand
+    texture .2 .2 .5
+    push
+        color 200 122 200
+        texture .2 .2 1
+        rotate z (120 + (15 * (sin ($rot * 2))))
+        for i 20
+	torus 0 (51 + (5 * $i)) 0 3 (10 + (5 * (sin (($i * 36) + $rot))))
+        end_for
+        texture .2 .2 1
+        for i 7
+	tendril 0 90 0 270 270 20 10 8 0 20
+        end_for
+    pop
+end_function
+
+function halo rot
+    texture .2 .2 3
+    color 212 175 55 #gold
+    push
+        move 0 (((sin ($rot * 2)) + 1) * 10) 0
+        rotate y -90
+        rotate x -20
+        torus 0 50 0 5 60
+    pop
+end_function
+
+function the_head rot green
+    color 0 $green 0
+    push
+	move 0 175 0
+	sphere 0 0 0 50
+
+	#EYESTALKS AND EYES
+	eyestalks $rot $green
+
+	#A PULSATING SET OF TONGUES
+	tongues $rot
+
+	#THE DIVINITY OF THE HALO
+	halo $rot
+
+    pop
+end_function
+
+function body rot green
+    srand 20
+    texture .2 .2 .5
+    rotate y (90 + (45 * (sin $rot)))
+    color 0 $green 0
+    for x 5 15 1
+	torus 0 (150 - ($x * 5)) 0 5 ((((30 + (25 * ((sin $rot) + 1))) + (rand 10)) / 15) * $x)
+    end_for
+    for i 0 180 10
+	torus 0 ((75 - $i) % -250) 0 5 ((30 + (25 * ((sin (($i * 4) + $rot)) + 1))) + (rand 10))
+    end_for
+    for x 10
+	torus 0 (-145 + ($x * 5)) 0 5 ((((30 + (25 * ((sin ((170 * 4) + $rot)) + 1))) + (rand 10)) / 10) * $x)
+    end_for
+end_function
+
+function appendages rot green
+    texture .2 .2 .5
+    color 0 $green 0
+    srand 20
+    for tendies 40
+	set r (rand 1024)
+	set height (90 - (rand 170))
+	set theta (-15 + (rand 31))
+	set phi ((360 / 40) * $tendies)
+	set len (5 + (rand 15))
+	set rad (5 + (rand 5))
+	srand
+	tendril 0 $height 0 $theta $phi 15 $len $rad (rand 3) 20
+	srand $r
+    end_for
+end_function
+
+function hairs rot
+    srand $rot
+    color 255 0 0
+    for flowies 0 180 10
+	set height (90 - (rand 200))
+	set height (75 - $flowies)
+	set width ((20 + (25 * ((sin (($height * 3) + $rot)) + 1))) + (rand 10))
+	flower 0 $height 0 (-2 + (rand 4)) (rand 360) 10 ($width / 2) 10 0
+    end_for
+end_function
+
+function main
+    light 2 1 2
+    srand 20
+    for rot 0 359 10
+	clear
+	set green (127 + (64 * ((sin $rot) + 1)))
+	srand 20
+
+	#AND IF YOU GAZE FOR LONG INTO AN ABYSS, THE ABYSS GAZES ALSO INTO YOU
+	make_background $rot
+
+	#BODY
+	push
+	    move (250 + (50 * (cos $rot))) (200 + (50 * (sin $rot))) 0
+
+	    #ORB MAMA
+	    orb_mama $rot
+
+	    #THE TERRIBLE PULSATING BODY
+	    body $rot $green
+
+	    #WHAT CAN ONLY BE DESCRIBED AS THE HEAD
+	    the_head $rot $green
+
+	    #BLESSED BE THY NOODLY APPENDAGES
+	    appendages $rot $green
+
+	    #RED HAIRS UPON THE FORM
+	    hairs $rot
+
+	pop
+	save savior.ppm $rot
+    end_for
+
+    gif savior.ppm robot.gif
+end_function

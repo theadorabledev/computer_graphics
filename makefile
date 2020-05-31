@@ -2,7 +2,7 @@ CC = gcc
 
 RR = $(MAKECMDGOALS)
 PV = ./parser
-PV = ./mdl_parser
+#PV = ./mdl_parser
 RC = $(PV)
 BINARIES = map_bin library mdl_parser
 ifeq ($(MAKECMDGOALS), debug)
@@ -47,7 +47,9 @@ symtab.o: mdl/symtab.c mdl/mdl_parser.h
 parser: parser.c map library
 	$(CC) -o parser parser.c map_bin library -lm
 run: picmaker line matrix parser bezier
-	$(RC) simple_anim.mdl
+	#$(RC) simple_anim.mdl
+	#$(RC) eval_test
+	$(RC) our_lord
 	#./parser tendril_script
 	#make convert
 	make clean
