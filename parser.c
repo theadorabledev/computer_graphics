@@ -15,7 +15,7 @@
 #define BUILD(x, i) BUILD##i(x)
 
 #define MAX_ARGS 256
-enum command{Comment, Display, Clear, Push, Pop, End_For, End_If, Else, If, For, Set, Srand, Color, Light, Texture,  Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save, Gif, Function};
+enum command{Comment, Display, Clear, Push, Pop, End_For, End_If, End_Function, Function, Else, If, For, Set, Srand, Color, Light, Texture,  Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save, Gif, Function_Call};
 typedef struct command_struct COMMAND;
 typedef struct command_struct{
   int pos;
@@ -27,6 +27,37 @@ typedef struct command_struct{
   enum command  type;
   char * args;
 } COMMAND;
+typedef map_t(COMMAND *) function_map;
+typedef struct parse_data{
+  COMMAND * starting_command;
+  function_map f_map;
+}PARSE_DATA;
+void map_clean(map_str_t m){
+  char *key;
+  map_iter_t iter = map_iter(&m);
+  while (key = map_next(&m, &iter)){
+    if(key){
+      char * res = *map_get(&m, key);
+      free(res);
+    }
+  }
+  map_deinit(&m);
+}
+void print_map(map_str_t m){
+  char *key;
+  map_iter_t iter = map_iter(&m);
+  while (key = map_next(&m, &iter)){
+    char * res = *map_get(&m, key);
+    printf("    (%-20s) --> (%s)\n", key, res);
+  }
+}
+void print_variables(COMMAND * c){
+  if(!c)
+    return;
+  print_variables(c->parent);
+  printf("========|(%-3d) %-50.50s|========\n", c->pos, c->args);
+  print_map(c->variables);
+}
 
 typedef struct stack STACK;
 typedef struct stack {
@@ -35,6 +66,8 @@ typedef struct stack {
   COMMAND * command_true_end;
   COMMAND * command_false_end;
 }STACK;
+
+
 
 void trimleading(char *s){
   int i,j;
@@ -193,8 +226,17 @@ COMMAND * generate_command(char * string, int type, COMMAND * parent){
   }
   return c;
 }
-COMMAND *  parse_file(char * filename){
-  char * commands[] = {"comment", "display", "clear", "push", "pop", "end_for", "end_if", "else", "if", "for", "set", "srand", "color", "light", "texture", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save", "gif", "function"};
+void free_command(COMMAND * command){
+  free(command->args);
+  switch(command->type){
+    case Function:
+    case For:
+      map_clean(command->variables);
+  }
+  free(command);
+}
+COMMAND * parse_file(function_map * f_map, char * filename){
+  char * commands[] = {"comment", "display", "clear", "push", "pop", "end_for", "end_if", "end_function", "function", "else", "if", "for", "set", "srand", "color", "light", "texture", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save", "gif"};
   FILE *f;
   char line[256];
   bzero(line, 256);
@@ -203,42 +245,42 @@ COMMAND *  parse_file(char * filename){
   else
     f = fopen(filename, "r");
   int pos = 0;
-  COMMAND * last = generate_command("main", Function, NULL);
-  COMMAND * main = last;
-  main->pos = pos++;
-  STACK * stack = stack_add(NULL, main);
+  COMMAND * last = NULL;
+  COMMAND * main = NULL;
+  STACK * stack = NULL;
+  int first = 1;
   while(fgets(line, 255, f) != NULL){
     trimleading(line);
     line[strlen(line)-1]='\0';
     if(!strlen(line))
       continue;
     if(line[0] == '#')
-	continue;
-    for(int c = 0; c < 32; c++){
+      continue;
+    int built_in = 0;
+    for(int c = 0; c < 33; c++){
       if(!strncmp(line, commands[c], strlen(commands[c]))){
-	COMMAND * command = generate_command(line, c, stack->command);
+	COMMAND * command = generate_command(line, c, stack ? stack->command : NULL);
 	if(last){
 	  last->next_canon = command;
-	  command->pos = pos++;
 	}
+	command->pos = pos++;
 	switch(c){
+	  case Function:
+	    stack = stack_add(stack, command);
+	    break;
 	  case If:
 	  case For:
 	    stack = stack_add(stack, command);
 	    last->next_true = command;
 	    break;
 	  case Else:
-	    //last->next_true = ;
-	    //stack->command_true_end = last;
 	    stack->command->next_false = command;
 	    stack->command_true_end = last;
 	    break;
 	  case End_If:
-	    //printf("%d %d %d", last->next_true->pos, stack->command_true_end->pos, 0);
 	    last->next_true = command;
 	    if(stack->command_true_end)
 	      stack->command_true_end->next_true = command;
-	    //stack->command_true_end->next_true = command;
 	    stack = stack_pop(stack);
 	    break;
 	  case End_For:
@@ -246,41 +288,59 @@ COMMAND *  parse_file(char * filename){
 	    last->next_true = stack->command;
 	    stack = stack_pop(stack);
 	    break;
+	  case End_Function:
+	    last->next_true = command;
+	    stack->command->next_false = command;
+	    char ** args = eval(NULL, stack->command->args);
+	    map_set(f_map, args[1], stack->command);
+	    for(int i = 0; i < MAX_ARGS; i++)
+	      if(args[i])
+		free(args[i]);
+	    free(args);
+	    stack = stack_pop(stack);
+	    break;
 	  default:
 	    if(last)
 	      last->next_true = command;
 	}
+	if(first)
+	  main = command;
+	first = 0;
 	last = command;
+	built_in = 1;
 	break;
       }
     }
+    if(!built_in){
+      char str[256];
+      strncpy(str, line, 255);
+      char * name = strtok(str, " ");
+      COMMAND * res = *map_get(f_map, name);
+      COMMAND * command = generate_command(line, Function_Call, stack ? stack->command : NULL);
+      last->next_canon = command;
+      command->pos = pos++;
+      last->next_true = command;
+      command->next_false = res;
+      last = command;
+    }
+    bzero(line, 256);
   }
-  stack_pop(stack);
   fclose(f);
   COMMAND * n = main;
   while(n){
-    printf("(%-3d) %-20.20s |", n->pos, n->args);
-    if(n->next_true)
-      printf("(%-3d) %-20.20s |", n->next_true->pos, n->next_true->args);
-    if(n->next_false)
-      printf("(%-3d) %-20.20s |", n->next_false->pos, n->next_false->args);
+    printf("(%-3d) %-12.12s |", n->pos, n->args);
+    printf("(%-3d) %-12.12s |",
+	   n->next_true ? n->next_true->pos : -1,
+	   n->next_true ? n->next_true->args : "");
+    printf("(%-3d) %-12.12s |",
+	   n->next_false ? n->next_false->pos : -1,
+	   n->next_false ? n->next_false->args : "");
     printf("\n");
     n = n->next_canon;
   }
-  //return NULL;
   return main;
 }
-void map_clean(map_str_t m){
-  char *key;
-  map_iter_t iter = map_iter(&m);
-  while (key = map_next(&m, &iter)){
-    if(key){
-      char * res = *map_get(&m, key);
-      free(res);
-    }
-  }
-  map_deinit(&m);
-}
+
 void execute_commands (COMMAND * func){
   MATRIX * stack = generate_matrix(4, 4);
   ident(stack);
@@ -290,13 +350,13 @@ void execute_commands (COMMAND * func){
   ident(transform);
   while(func){
     char **args = eval(func, func->args);
-    if(func->type > 5){
+    if(func->type > 6){
 	args++;
     }
     int end_true = 1;
     printf("(%-3d) |", func->pos);
-    for(int i = 0 - (func->type > 5); i < MAX_ARGS && args[i]; i++)
-      printf("%-12s |", args[i]);
+    for(int i = 0 - (func->type > 6); i < MAX_ARGS && args[i]; i++)
+      printf("%-12.12s |", args[i]);
     printf("\n");
     switch(func->type){
       case Display:
@@ -318,9 +378,6 @@ void execute_commands (COMMAND * func){
       case Pop:
 	stack = pop_from_stack(stack);
 	break;
-      case End_For:{
-	break;
-      }
       case Save:{
 	system("rm -rf temp.ppm");
 	char buf[30];
@@ -378,9 +435,41 @@ void execute_commands (COMMAND * func){
 	  map_init(&func->variables);
 	}
 	break;
+      case Function_Call:
+	end_true = 0;
+	func->next_false->next_false->next_false = func->next_true;
+	map_init(&func->next_false->variables);
+	char ** func_args = eval(func->next_false, func->next_false->args);
+	for(int i = 2; i < MAX_ARGS && func_args[i]; i++){
+	  map_set(&func->next_false->variables, func_args[i], STR_COPY(args[i - 2]));
+	}
+	for(int i = 0; i < MAX_ARGS; i++)
+	  if(func_args[i])
+	    free(func_args[i]);
+	free(func_args);
+	break;
+      case Function:{
+	//print_variables(func);
+	char * key;
+	map_iter_t iter = map_iter(&m);
+	while (key = map_next(&func->variables, &iter)){
+	  if(key){
+	    char * res = *map_get(&func->variables, key);
+	  }
+	}
+	break;
+      }
+      case End_Function:
+	end_true = 0;
+	map_clean(func->parent->variables);
+	break;
       case If:
+	map_init(&func->variables);
 	if(args[0][0] == '0')
 	  end_true = 0;
+	break;
+      case End_If:
+	map_clean(func->parent->variables);
 	break;
       case Set:{
 	char **t = get_variable_value(func, args[0]);
@@ -486,7 +575,7 @@ void execute_commands (COMMAND * func){
     multiply(stack, e->triangle_matrix);
     plot_element(e, s);
     clear(e);
-    if(func->type > 5)
+    if(func->type > 6)
       args--;
     for(int i = 0; i < MAX_ARGS; i++)
       if(args[i])
@@ -505,16 +594,19 @@ void execute_commands (COMMAND * func){
 }
 int main(int argc, char *argv[]){
   srand(time(0));
-
-  COMMAND * main = parse_file(argv[1]);
+  function_map f_map;
+  map_init(&f_map);
+  COMMAND * start = parse_file(&f_map, argv[1]);
+  COMMAND * main = *map_get(&f_map, "main");
   execute_commands(main);
-  int i = 0;
-  while(main){
-    COMMAND * n = main->next_canon;
-    free(main->args);
-    free(main);
-    main = n;
-    i ++;
+  while(start){
+    COMMAND * next = start->next_canon;
+    free(start->args);
+    free(start);
+    start = next;
   }
+  map_deinit(&f_map);
+
   return 0;
 }
+
