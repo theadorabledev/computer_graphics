@@ -523,21 +523,30 @@ void copy_matrix(MATRIX * a, MATRIX * b){
       b->data[r][c] = a->data[r][c];
 }
 void multiply(MATRIX * a, MATRIX * b){
-  MATRIX * t = generate_matrix(a->rows, b->columns);
+  //https://stackoverflow.com/questions/1907557/optimized-matrix-multiplication-in-c
+  //https://akkadia.org/drepper/cpumemory.pdf
+  MATRIX * temp = generate_matrix(b->columns, a->rows);
+  for (int r = 0; r < temp->rows; r++){
+    for (int c = 0; c < temp->columns; c++){
+      temp->data[r][c] = b->data[c][r];
+    }
+  }
+  MATRIX * res = generate_matrix(a->rows, b->columns);
   for (int r=0; r < a->rows; r++){
     for (int c=0; c < b->columns; c++){
       for(int i = 0; i < b->rows; i++) {
-	t->data[r][c] += a->data[r][i] * b->data[i][c];
+	res->data[r][c] += a->data[r][i] * temp->data[c][i];
       }
     }
   }
   free(*b->data);
   free(b->data);
-  b->rows = t->rows;
-  b->columns = t->columns;
-  b->last_col = t->last_col;
-  b->data = t->data;
-  free(t);
+  free_matrix(temp);
+  b->rows = res->rows;
+  b->columns = res->columns;
+  b->last_col = res->last_col;
+  b->data = res->data;
+  free(res);
 }
 void ident(MATRIX * m){
   for(int r = 0; r < m->columns; r++){
