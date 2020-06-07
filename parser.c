@@ -15,7 +15,7 @@
 #define BUILD(x, i) BUILD##i(x)
 
 #define MAX_ARGS 256
-enum command{Comment, Display, Clear, Push, Pop, End_For, End_If, End_Function, Function, Else, If, For, Set, Srand, Color, Light, Texture,  Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save, Gif, Function_Call};
+enum command{Comment, Display, Clear, Push, Pop, End_For, End_If, End_Function, Function, Else, If, For, Set, Srand, Color, Light, Texture,  Line, Circle, Bezier, Hermite, Speckle, Flower, Tendril, Box, Sphere, Torus, Cone,  Scale, Move, Rotate, Save, Gif, Dimensions, Super_Sample, Function_Call};
 typedef struct command_struct COMMAND;
 typedef struct command_struct{
   int pos;
@@ -58,7 +58,6 @@ void print_variables(COMMAND * c){
   printf("========|(%-3d) %-50.50s|========\n", c->pos, c->args);
   print_map(c->variables);
 }
-
 typedef struct stack STACK;
 typedef struct stack {
   STACK * next;
@@ -66,8 +65,6 @@ typedef struct stack {
   COMMAND * command_true_end;
   COMMAND * command_false_end;
 }STACK;
-
-
 
 void trimleading(char *s){
   int i,j;
@@ -84,6 +81,15 @@ char ** get_variable_value(COMMAND * command, char * var){
   if(command->parent)
     return get_variable_value(command->parent, var);
   return NULL;
+}
+void set_variable_value(COMMAND * command, char * var, char * val){
+  char ** v = get_variable_value(command, var);
+  if(v){
+    free(*v);
+    *v = STR_COPY(val);
+  }else{
+    map_set(&command->parent->variables, var, STR_COPY(val));
+  }
 }
 char ** eval(COMMAND * command, char * string){
   if(string[0] == '#')
@@ -236,7 +242,7 @@ void free_command(COMMAND * command){
   free(command);
 }
 COMMAND * parse_file(function_map * f_map, char * filename){
-  char * commands[] = {"comment", "display", "clear", "push", "pop", "end_for", "end_if", "end_function", "function", "else", "if", "for", "set", "srand", "color", "light", "texture", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save", "gif"};
+  char * commands[] = {"comment", "display", "clear", "push", "pop", "end_for", "end_if", "end_function", "function", "else", "if", "for", "set", "srand", "color", "light", "texture", "line", "circle", "bezier", "hermite", "speckle", "flower", "tendril", "box", "sphere", "torus", "cone", "scale", "move", "rotate", "save", "gif", "dimensions", "super_sample", "function_call"};
   FILE *f;
   char line[256];
   bzero(line, 256);
@@ -257,7 +263,7 @@ COMMAND * parse_file(function_map * f_map, char * filename){
     if(line[0] == '#')
       continue;
     int built_in = 0;
-    for(int c = 0; c < 33; c++){
+    for(int c = 0; c < 35; c++){
       if(!strncmp(line, commands[c], strlen(commands[c]))){
 	COMMAND * command = generate_command(line, c, stack ? stack->command : NULL);
 	if(last){
@@ -448,17 +454,8 @@ void execute_commands (COMMAND * func){
 	    free(func_args[i]);
 	free(func_args);
 	break;
-      case Function:{
-	//print_variables(func);
-	char * key;
-	map_iter_t iter = map_iter(&m);
-	while (key = map_next(&func->variables, &iter)){
-	  if(key){
-	    char * res = *map_get(&func->variables, key);
-	  }
-	}
+      case Function:
 	break;
-      }
       case End_Function:
 	end_true = 0;
 	map_clean(func->parent->variables);
@@ -471,14 +468,19 @@ void execute_commands (COMMAND * func){
       case End_If:
 	map_clean(func->parent->variables);
 	break;
+      case Dimensions:
+	free_grid(s);
+	s = generate_grid(BUILD(args, 1));
+	break;
+      /* case Super_Sample:{ */
+      /* 	int width = (int) (s->width * atof(args[0])); */
+      /* 	int height = (int) (s->height * atof(args[1])); */
+      /* 	free_grid(s); */
+      /* 	s = generate_grid( */
+      /* 	break; */
+      /* } */
       case Set:{
-	char **t = get_variable_value(func, args[0]);
-	if(t){
-	  free(*t);
-	  *t = STR_COPY(args[1]);
-	}else{
-	  map_set(&func->parent->variables, args[0], STR_COPY(args[1]));
-	}
+	set_variable_value(func, args[0], args[1]);
 	break;
       }
       case Srand:
