@@ -1,9 +1,7 @@
 CC = gcc
 
 RR = $(MAKECMDGOALS)
-PV = ./parser
-#PV = ./mdl_parser
-RC = $(PV)
+RC = ./parser
 BINARIES = map_bin library mdl_parser
 ifeq ($(MAKECMDGOALS), debug)
 	CC = gcc -g
@@ -11,11 +9,14 @@ ifeq ($(MAKECMDGOALS), debug)
 else ifeq ($(MAKECMDGOALS), memcheck)
 	CC = gcc -g
 	RC = valgrind -s --leak-check=full --track-origins=yes --show-leak-kinds=all $(PV)
+else ifeq ($(MAKECMDGOALS), profile)
+	CC = gcc -pg
 endif
 
 all: $(BINARIES) run
 memcheck: clobber $(BINARIES) run
 debug: clobber $(BINARIES) run
+profile: clobber $(BINARIES) profile
 map_bin: map/src/map.c map/src/map.h
 	$(CC) -o map_bin -c map/src/map.c
 picmaker: picmaker.c library
@@ -42,18 +43,16 @@ y.tab.h: mdl/mdl.y
 symtab.o: mdl/symtab.c mdl/mdl_parser.h
 	$(CC) -c mdl/symtab.c
 
-
-
 parser: parser.c map library
 	$(CC) -o parser parser.c map_bin library -lm
-run: picmaker line matrix parser bezier
-	#$(RC) simple_anim.mdl
-	#$(RC) eval_test
+run: parser mdl_parser
 	$(RC) our_lord
-	#./parser tendril_script
-	#make convert
 	make clean
-
+profile: parser mdl_parser
+	$(RC) our_lord
+	gprof parser gmon.out -p
+	gprof parser gmon.out -q
+	make clean
 display:
 	display *.png
 convert:

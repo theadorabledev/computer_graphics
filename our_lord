@@ -1,5 +1,4 @@
 #theadorabledev.github.io
-
 function make_background rot
     texture 0 0 0
     color 0 0 0
@@ -144,6 +143,7 @@ function hairs rot
 end_function
 
 function main
+    dimensions 500 500
     light 2 1 2
     srand 20
     for rot 0 359 10
