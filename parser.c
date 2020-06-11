@@ -405,9 +405,6 @@ void execute_commands (COMMAND * func){
 	break;
       }
       case For:
-	//For var start stop inc
-	//For var start stop -> var start stop 1
-	//For var stop -> 0 stop 1
 	if(!args[3]){
 	  if(args[2]){
 	    free(args[3]);
@@ -475,13 +472,6 @@ void execute_commands (COMMAND * func){
 	free_grid(s);
 	s = generate_grid(BUILD(args, 1));
 	break;
-      /* case Super_Sample:{ */
-      /* 	int width = (int) (s->width * atof(args[0])); */
-      /* 	int height = (int) (s->height * atof(args[1])); */
-      /* 	free_grid(s); */
-      /* 	s = generate_grid( */
-      /* 	break; */
-      /* } */
       case Set:{
 	set_variable_value(func, args[0], args[1]);
 	break;
@@ -565,11 +555,11 @@ void execute_commands (COMMAND * func){
 	break;
       case Rotate:
 	switch(args[0][0]){
-	  case 'x': rotate_x_axis(transform, atoi(args[1]) * M_PI / 180.0);
+	  case 'x': rotate_x_axis(transform, degrees_to_radians(atof(args[1])));
 	    break;
-	  case 'y': rotate_y_axis(transform, atoi(args[1]) * M_PI / 180.0);
+	  case 'y': rotate_y_axis(transform, degrees_to_radians(atof(args[1])));
 	    break;
-	  case 'z': rotate_z_axis(transform, atoi(args[1]) * M_PI / 180.0);
+	  case 'z': rotate_z_axis(transform, degrees_to_radians(atof(args[1])));
 	    break;
 	}
 	transform_stack(stack, transform);
