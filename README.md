@@ -13,24 +13,32 @@ Anything inside `()` will be evaluated
 | Expression                     | Description                                           | Example    | Returns         |
 |--------------------------------|-------------------------------------------------------|------------|-----------------|
 | +, -, *, /, %                  | Should be fairly obvious                              | (5 / 2)    | double          |
-| <, <=, >, >=, ==, !=, &&, \a\a | Also pretty standard                                  | (1 == 2)   | double (1 or 0) |
+| <, <=, >, >=, ==, !=, &&, \|\| | Also pretty standard                                  | (1 == 2)   | double (1 or 0) |
 | rand                           | Returns a random int in range                         | (rand 100) | int             |
 | sin, cos                       | Returns the expected value, input should be in degres | (sin 60)   | double          |
 
 ### Variables
 
 Can be set with `set <variable> <value>` or in for loops(see below)
+
 Values stored as strings in table
+
 When you want to get the variable value, prefix the variable name with `$`: `x` => `$x`
+
 Variables are scoped. If a variable is first set locally when the code block finishes executing it will be deleted. If the variable was defined in a higher scope then the value of the variable in the higher scope will be changed.
+
 Scopes include functions, for loops, if statements, etc...
 
 ### Functions
 
 Syntax: `function <function_name> <arg1> <arg2> ...`.
+
 The function body should be followed with the `end_function` command.
+
 Arguments are pass by value.
+
 The function can be called with `<function_name> <arg1> <arg2> ...`. Example: `my_function 1 2 3`.
+
 The script will execute the function `main` automatically, be sure to define it.
 
 ### For Loops
@@ -81,5 +89,5 @@ Fairly self explanatory
 | Flower     | `flower <x> <y> <z> <theta> <phi> <variance> <length> <tendrils> <bud>`             | Creates `<tendrils>` flowers growing from the given point. `<bud>`(0, 1) determines whether or not the flowers should have buds.                                                                               |
 | Scale      | `scale <x> <y> <z>`                                                                 | Scales the elements by the given values.                                                                                                                                                                       |
 | Move       | `move <x> <y> <z>`                                                                  | Tranlates the elements by the given values.                                                                                                                                                                    |
-| Rotate     | `rotate <axis> <degrees>`                                                           | Rotates the elements about `<axis>`("x", "y", "z) by `<degrees`>                                                                                                                                               |
+| Rotate     | `rotate <axis> <degrees>`                                                           | Rotates the elements about `<axis>`("x", "y", "z) by `<degrees>`                                                                                                                                               |
 
