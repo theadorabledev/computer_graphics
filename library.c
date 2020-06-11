@@ -523,6 +523,7 @@ void grow_matrix(MATRIX *m, int newcols){
   m->columns = newcols;
 }
 void copy_matrix(MATRIX * a, MATRIX * b){
+
   for (int r=0; r < a->rows; r++)
     for (int c=0; c < a->columns; c++)
       b->data[r][c] = a->data[r][c];
@@ -588,15 +589,23 @@ double * generate_cone(int x, int y, int z, double theta, double phi, double inn
   memcpy(data, origin, 3 * sizeof(double));
   memcpy(data + 3, midpoint, 3 * sizeof(double));
   double inc = 2 * M_PI / res;
+
+  double ci = cos(inner_angle);
+  double si = sin(inner_angle);
+  double ct = cos(theta);
+  double st = sin(theta);
+  double cp = cos(phi);
+  double sp = sin(phi);
+
   for(int i = 0; i <= res; i++){
-    double x1 = x + radius * ((sin(inner_angle) * cos(theta) * cos(phi) * cos(inc * i)) -
-			      (sin(inner_angle) * sin(phi) * sin(inc * i)) +
-			      (cos(inner_angle) * sin(theta) * cos(phi)));
-    double y1 = y + radius * ((sin(inner_angle) * cos(theta) * sin(phi) * cos(inc * i)) +
-			      (sin(inner_angle) * cos(phi) * sin(inc * i)) +
-			      (cos(inner_angle) * sin(theta) * sin(phi)));
-    double z1 = z + radius * ((sin(inner_angle) * sin(theta) * cos(inc * i)) +
-			      (cos(inner_angle) * cos(theta)));
+    double x1 = x + radius * ((si * ct * cp * cos(inc * i)) -
+			      (si * sp * sin(inc * i)) +
+			      (ci * st * cp));
+    double y1 = y + radius * ((si * ct * sp * cos(inc * i)) +
+			      (si * cp * sin(inc * i)) +
+			      (ci * st * sp));
+    double z1 = z + radius * ((si * st * cos(inc * i)) +
+			      (ci * ct));
     double temp[] = {x1, y1, z1};
     memcpy(data + ((i + 2) * 3), temp, 3 * sizeof(double));
   }
