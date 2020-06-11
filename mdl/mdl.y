@@ -798,7 +798,7 @@ int main(int argc, char **argv) {
 
   ELEMENT * e = generate_element(40, 0);
   e->color = rgb(50, 50, 50);
-  add_light(e, 2, 1, 2, 255, 255, 255);
+  add_light(e, "1", 2, 1, 2, 255, 255, 255);
 
   GRID * s = generate_grid(500, 500);
   MATRIX * transform = generate_matrix(4, 4);
