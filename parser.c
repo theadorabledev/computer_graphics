@@ -1,5 +1,4 @@
 #include "library.h"
-#include "map/src/map.h"
 #define BUILD0(x) atof(x[0])
 #define BUILD1(x) BUILD0(x), atoi(x[1])
 #define BUILD2(x) BUILD1(x), atoi(x[2])
@@ -161,13 +160,17 @@ char ** eval(COMMAND * command, char * string){
       }else if(args[i + 1] && !strcmp(args[i + 1], "%")){
 	sprintf(buf, "%d", atoi(args[i]) % atoi(args[i + 2]));
       }else if(args[i + 1] && !strcmp(args[i + 1], "<")){
-	sprintf(buf, "%d", atoi(args[i]) < atoi(args[i + 2]));
+	sprintf(buf, "%d", atof(args[i]) < atof(args[i + 2]));
       }else if(args[i + 1] && !strcmp(args[i + 1], "<=")){
-	sprintf(buf, "%d", atoi(args[i]) <= atoi(args[i + 2]));
+	sprintf(buf, "%d", atof(args[i]) <= atof(args[i + 2]));
       }else if(args[i + 1] && !strcmp(args[i + 1], ">")){
-	sprintf(buf, "%d", atoi(args[i]) > atoi(args[i + 2]));
+	sprintf(buf, "%d", atof(args[i]) > atof(args[i + 2]));
+      }else if(args[i + 1] && !strcmp(args[i + 1], "==")){
+	sprintf(buf, "%d", atof(args[i]) == atof(args[i + 2]));
+      }else if(args[i + 1] && !strcmp(args[i + 1], "!=")){
+	sprintf(buf, "%d", atof(args[i]) != atof(args[i + 2]));
       }else if(args[i + 1] && !strcmp(args[i + 1], ">=")){
-	sprintf(buf, "%d", atoi(args[i]) >= atoi(args[i + 2]));
+	sprintf(buf, "%d", atof(args[i]) >= atof(args[i + 2]));
       }else if(args[i + 1] && !strcmp(args[i + 1], "&&")){
 	sprintf(buf, "%d", atof(args[i]) && atof(args[i + 2]));
       }else if(args[i + 1] && !strcmp(args[i + 1], "||")){
@@ -497,10 +500,10 @@ void execute_commands (COMMAND * func){
 	break;
       case Light:
 	//Color defaults to white if no color specified
-	if(args[3])
-	  add_light(e, BUILD(args, 5));
+	if(args[4])
+	  add_light(e, args[0], BUILD((args + 1), 5));
 	else
-	  add_light(e, BUILD(args, 2), 255, 255, 255);
+	  add_light(e, args[0], BUILD((args + 1), 2), 255, 255, 255);
 	break;
       case Texture:
 	set_texture(e, atof(args[0]), atof(args[1]), atof(args[2]));

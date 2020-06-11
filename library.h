@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <float.h>
 #include <time.h>
+#include "map/src/map.h"
 #ifndef LIBRARY_H
 #define LIBRARY_H
 #define SWAP(a,b,type) {type ttttttttt=a;a=b;b=ttttttttt;}
@@ -33,8 +34,8 @@ typedef struct _Light LIGHT;
 typedef struct _Light{
   VECTOR vector;
   VECTOR rgb;
-  LIGHT *next;
 } LIGHT;
+typedef map_t(LIGHT*) LIGHT_MAP;
 typedef struct Element ELEMENT;
 typedef struct Element{
   MATRIX * edge_matrix;
@@ -47,9 +48,10 @@ typedef struct Element{
   VECTOR ambient_const;
   VECTOR diffuse_const;
   VECTOR specular_const;
-  LIGHT * lights;
+  LIGHT_MAP lights;
   VECTOR viewpoint;
 } ELEMENT;
+
 
 GRID * generate_grid(int width, int height);
 void free_grid(GRID * g);
@@ -67,7 +69,7 @@ int radians_to_degrees(double radians);
 #define M_PI 3.14159265358979323846
 
 LIGHT * generate_light(double x, double y, double z, int r, int g, int b);
-void add_light(ELEMENT * e, int x, int y, int z, int r, int g, int b);
+void add_light(ELEMENT * e, char * name, int x, int y, int z, int r, int g, int b);
 void set_texture(ELEMENT * e, double ac, double dc, double sc);
 void set_texture_rgb(ELEMENT * e, double ac_r, double ac_g, double ac_b,
 		     double dc_r, double dc_g, double dc_b,

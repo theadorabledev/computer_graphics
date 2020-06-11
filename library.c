@@ -213,7 +213,6 @@ LIGHT * generate_light(double x, double y, double z, int r, int g, int b){
   l->vector = normalized(v);
   free(v);
   l->rgb = generate_vector(r, g, b);
-  l->next = NULL;
   return l;
 }
 void free_light(LIGHT * l){
@@ -223,10 +222,12 @@ void free_light(LIGHT * l){
   free(l->rgb);
   free(l);
 }
-void add_light(ELEMENT * e, int x, int y, int z, int r, int g, int b){
+void add_light(ELEMENT * e, char * name, int x, int y, int z, int r, int g, int b){
+  LIGHT ** old_light = map_get(&e->lights, name);
+  if(old_light)
+    free_light(*old_light);
   LIGHT * l = generate_light(x, y, z, r, g, b);
-  l->next = e->lights;
-  e->lights = l;
+  map_set(&e->lights, name, l);
 }
 void set_texture(ELEMENT * e, double ac, double dc, double sc){
   for(int i = 0; i < 3; i++){
@@ -258,7 +259,7 @@ ELEMENT * generate_element(int size, int color){
   e->ambient_const = generate_vector(.2, .2, .2);
   e->diffuse_const = generate_vector(.5, .5, .5);
   e->specular_const = generate_vector(.5, .5, .5);
-  e->lights = NULL;
+  map_init(&e->lights);
   e->viewpoint = generate_vector(0, 0, 1);
   //add_light(e, 0, 0, 1, 255, 255, 255);
   return e;
@@ -270,12 +271,13 @@ void free_element(ELEMENT * e){
   free(e->diffuse_const);
   free(e->specular_const);
   free(e->viewpoint);
-  LIGHT * l = e->lights;
-  while(l){
-    LIGHT * ln = l->next;
-    free_light(l);
-    l = ln;
+  map_iter_t iter = map_iter(&e->lights);
+  char * key;
+  while((key = map_next(&e->lights, &iter))){
+    LIGHT * res = *map_get(&e->lights, key);
+    free_light(res);
   }
+  map_deinit(&e->lights);
   free(e);
 }
 int calculate_color(ELEMENT * e, VECTOR normal){
@@ -289,8 +291,12 @@ int calculate_color(ELEMENT * e, VECTOR normal){
   for(int i = 0; i < 3; i++)
     rgb_vec[i] *= e->ambient_const[i];
   //I = (A * Ka) + (P * Kd * (N̂ • L̂)) + (P * Kd * [(2N̂(N̂ • L̂) - L̂) • V̂]ⁿ)
-  LIGHT * light = e->lights;
-  while(light){
+  //LIGHT * light;
+  char * key;
+  map_iter_t iter = map_iter(&e->lights);
+  //LIGHT * light = e->lights;
+  while((key = map_next(&e->lights, &iter))){
+    LIGHT * light = *map_get(&e->lights, key);
     double d = dot_product(normal, light->vector);
     VECTOR scaled = scale_vector(normal, d * 2);
     VECTOR subtracted = subtract(scaled, light->vector);
@@ -300,7 +306,6 @@ int calculate_color(ELEMENT * e, VECTOR normal){
     }
     free(scaled);
     free(subtracted);
-    light = light->next;
   }
   for(int i = 0; i < 3; i++){
     rgb_vec[i] = fmin(255, rgb_vec[i]);
