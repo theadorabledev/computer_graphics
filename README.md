@@ -1,5 +1,7 @@
 # A Basic Graphics Engine
 
+## Theadora Williams, Period 10
+
 ## Language Syntax
 
 ### General

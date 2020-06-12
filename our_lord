@@ -15,19 +15,33 @@ function make_background rot
 end_function
 
 function orb_mama rot
-    texture 1 1 1
-    color 255 255 255
-    set r (rand 1024)
+    texture 1 0 0
+    set ra (rand 1024)
     for s 15
-        srand $r
-        set r (rand 1024)
-        set x ((200 * (cos (($s * 36) + $rot))) + ((rand 21) - 10))
-        set y ((($s * 50) - 250) + ((rand 21) - 10))
-        set z ((200 * (sin (($s * 36) + $rot))) + ((rand 21) - 10))
-        sphere  $x $y $z 30
-        srand
-        flower $x $y $z 0 0 360 150 100 0
+        set t ((sin ($rot + ($s * 36))) * 2)
+
+    	set r (rand 255)
+	set g (rand 255)
+	set b (rand 255)
+	
+	srand $ra
+        set ra (rand 1024)
+		
+        
+
+	#color ($r * $t1) ($g * $t1) ($b * $t1)
+	if ((rand 20) != 1)
+	   set x ((200 * (cos (($s * 36) + $rot))) + ((rand 21) - 10))
+            set y ((($s * 50) - 250) + ((rand 21) - 10))
+            set z ((200 * (sin (($s * 36) + $rot))) + ((rand 21) - 10))
+	   color $r $g $b
+           sphere $x $y $z 30
+           srand
+	   #LIGHTNING
+           flower $x $y $z 0 0 360 150 100 0
+	end_if
     end_for
+    color 255 255 255    
 end_function
 
 function eyestalks rot green
@@ -39,6 +53,7 @@ function eyestalks rot green
 	rotate y ((20 * $y) + ((10* $y) * (cos $rot)))
 	rotate z (75 + (10 * (sin $rot)))
 	color 0 $green 0
+	color 255 255 255 
 	for i 17
 	    torus 0 (51 + (5 * $i)) 0 3 (10 + (5 * (sin (($i * 36) + $rot))))
 	end_for
@@ -82,6 +97,7 @@ end_function
 
 function the_head rot green
     color 0 $green 0
+    color 255 255 255 
     push
 	move 0 175 0
 	sphere 0 0 0 50
@@ -103,6 +119,7 @@ function body rot green
     texture .2 .2 .5
     rotate y (90 + (45 * (sin $rot)))
     color 0 $green 0
+    color 255 255 255 
     for x 5 15 1
 	torus 0 (150 - ($x * 5)) 0 5 ((((30 + (25 * ((sin $rot) + 1))) + (rand 10)) / 15) * $x)
     end_for
@@ -117,6 +134,7 @@ end_function
 function appendages rot green
     texture .2 .2 .5
     color 0 $green 0
+    color 255 255 255 
     srand 20
     for tendies 40
 	set r (rand 1024)
@@ -144,11 +162,14 @@ end_function
 
 function main
     dimensions 500 500
-    light 2 1 2
+    
+    #light my_light_2 -2 1 2 255 0 255
     srand 20
     for rot 0 359 10
+	srand
+    	light my_light 0 -1 .5 (255 * (rand 2)) (255 * (rand 2)) (255 * (rand 2))
 	clear
-	set green (127 + (64 * ((sin $rot) + 1)))
+	set green (160 + (32 * ((sin $rot) + 1)))
 	srand 20
 
 	#AND IF YOU GAZE FOR LONG INTO AN ABYSS, THE ABYSS GAZES ALSO INTO YOU
@@ -156,7 +177,8 @@ function main
 
 	#BODY
 	push
-	    move (250 + (50 * (cos $rot))) (200 + (50 * (sin $rot))) 0
+	    #move (250 + (50 * (cos $rot))) (200 + (50 * (sin $rot))) 0
+	    move 250 (200 + (50 * (sin $rot))) 0
 
 	    #ORB MAMA
 	    orb_mama $rot

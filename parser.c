@@ -112,7 +112,12 @@ char ** eval(COMMAND * command, char * string){
       char ** real_res = eval(command, sub);
       char *res = STR_COPY(real_res[0]);
       strncpy(sub, new_string + p_start - 1, p_end - p_start + 2);
-      char *new = str_replace(new_string, sub, res);
+      char *new = calloc(1024, sizeof(char));
+      new_string[p_start - 1] = 0;
+      new_string[p_end] = 0;
+      strcat(new, new_string);
+      strcat(new, res);
+      strcat(new, new_string + p_end + 1);
       free(new_string);
       free(sub);
       free(res);
@@ -120,7 +125,7 @@ char ** eval(COMMAND * command, char * string){
 	free(real_res[i]);
       free(real_res);
       new_string = new;
-      i = p_start;
+      i = p_start - 1;
     }
     i++;
   }
